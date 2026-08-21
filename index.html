@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>WISDE — FACEIT Challenge</title>
 
   <style>
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -14,12 +16,22 @@
 
     body {
       font-family: Inter, Arial, sans-serif;
+
       background:
-        radial-gradient(circle at top, #202638 0%, #0b0d12 45%, #07080b 100%);
+        radial-gradient(
+          circle at top,
+          #202638 0%,
+          #0b0d12 45%,
+          #07080b 100%
+        );
+
       color: #ffffff;
+
       min-height: 100vh;
+
       display: flex;
       justify-content: center;
+
       padding: 30px 16px;
     }
 
@@ -28,6 +40,8 @@
       max-width: 950px;
     }
 
+    /* HEADER */
+
     .header {
       text-align: center;
       margin-bottom: 25px;
@@ -35,73 +49,122 @@
 
     .eyebrow {
       color: #9aa4b2;
+
       font-size: 13px;
+
       letter-spacing: 3px;
+
       text-transform: uppercase;
+
       margin-bottom: 8px;
     }
 
     h1 {
       font-size: clamp(30px, 6vw, 52px);
+
       font-weight: 800;
+
       letter-spacing: -2px;
     }
 
     .subtitle {
       color: #aeb6c2;
+
       margin-top: 8px;
+
       font-size: 15px;
     }
 
+    /* MAIN CARD */
+
     .main-card {
-      background: rgba(20, 23, 31, 0.92);
-      border: 1px solid rgba(255,255,255,0.08);
+
+      background:
+        rgba(20, 23, 31, 0.92);
+
+      border:
+        1px solid rgba(255,255,255,0.08);
+
       border-radius: 24px;
+
       padding: 35px;
-      box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+
+      box-shadow:
+        0 25px 80px rgba(0,0,0,0.4);
+
       margin-bottom: 18px;
     }
+
+    /* PROGRESS */
 
     .progress-section {
       text-align: center;
     }
 
     .progress-number {
-      font-size: clamp(58px, 12vw, 100px);
+
+      font-size:
+        clamp(58px, 12vw, 100px);
+
       font-weight: 900;
+
       line-height: 1;
     }
 
     .progress-number span {
+
       color: #737b88;
+
       font-size: 0.45em;
     }
 
     .progress-bar {
+
       width: 100%;
+
       height: 18px;
+
       background: #292e38;
+
       border-radius: 999px;
+
       overflow: hidden;
+
       margin: 25px 0 12px;
     }
 
     .progress-fill {
+
       height: 100%;
+
       width: 0%;
+
       border-radius: inherit;
-      background: linear-gradient(90deg, #36d399, #62f5b0);
-      transition: width 0.5s ease;
+
+      background:
+        linear-gradient(
+          90deg,
+          #36d399,
+          #62f5b0
+        );
+
+      transition:
+        width 0.5s ease;
     }
 
     .progress-percent {
+
       color: #8f99a7;
+
       font-size: 14px;
     }
 
     .remaining {
+
       margin-top: 20px;
+
       font-size: 17px;
+
       color: #d8dde5;
     }
 
@@ -109,29 +172,46 @@
       color: white;
     }
 
-    /* OBJECTIVE SLIDER */
+    /* GOAL */
 
     .goal-selector {
-      margin: 30px auto 5px;
+
+      margin:
+        30px auto 5px;
+
       max-width: 600px;
+
       text-align: center;
+
       padding: 20px;
+
       background: #181c24;
+
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.06);
+
+      border:
+        1px solid rgba(255,255,255,0.06);
     }
 
     .goal-title {
+
       color: #8d96a4;
+
       font-size: 11px;
+
       letter-spacing: 2px;
+
       text-transform: uppercase;
+
       margin-bottom: 8px;
     }
 
     .goal-value {
+
       font-size: 28px;
+
       font-weight: 800;
+
       margin-bottom: 14px;
     }
 
@@ -140,463 +220,997 @@
     }
 
     .goal-slider {
+
       width: 100%;
+
       cursor: pointer;
+
       accent-color: #36d399;
     }
 
     .slider-labels {
+
       display: flex;
-      justify-content: space-between;
+
+      justify-content:
+        space-between;
+
       color: #68717f;
+
       font-size: 11px;
+
       margin-top: 5px;
     }
 
+    /* STATUS */
+
+    .pace-status {
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 9px;
+
+      margin-top: 22px;
+
+      font-size: 15px;
+
+      font-weight: 700;
+    }
+
+    .status-dot {
+
+      width: 10px;
+
+      height: 10px;
+
+      border-radius: 50%;
+    }
+
+    .status-green {
+      background: #36d399;
+
+      box-shadow:
+        0 0 12px #36d399;
+    }
+
+    .status-yellow {
+      background: #f5c542;
+
+      box-shadow:
+        0 0 12px #f5c542;
+    }
+
+    .status-red {
+      background: #ff6464;
+
+      box-shadow:
+        0 0 12px #ff6464;
+    }
+
+    /* STATS */
+
     .stats {
+
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+
+      grid-template-columns:
+        repeat(4, 1fr);
+
       gap: 12px;
+
       margin-top: 25px;
     }
 
     .stat {
+
       background: #181c24;
-      border: 1px solid rgba(255,255,255,0.06);
+
+      border:
+        1px solid rgba(255,255,255,0.06);
+
       border-radius: 16px;
+
       padding: 20px 12px;
+
       text-align: center;
     }
 
     .stat-value {
+
       font-size: 27px;
+
       font-weight: 800;
     }
 
     .stat-label {
+
       color: #8d96a4;
+
       font-size: 12px;
+
       margin-top: 6px;
+
       text-transform: uppercase;
+
       letter-spacing: 0.7px;
     }
 
+    /* DETAILS */
+
     .details {
+
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
       gap: 12px;
+
       margin-top: 12px;
     }
 
     .detail {
+
       background: #181c24;
+
       border-radius: 16px;
+
       padding: 18px;
+
       text-align: center;
-      border: 1px solid rgba(255,255,255,0.06);
+
+      border:
+        1px solid rgba(255,255,255,0.06);
     }
 
     .detail-value {
+
       font-size: 23px;
+
       font-weight: 800;
     }
 
     .detail-label {
+
       color: #8d96a4;
+
       font-size: 12px;
+
       margin-top: 5px;
     }
 
+    /* FOOTER */
+
     .footer {
+
       text-align: center;
+
       color: #68717f;
+
       font-size: 12px;
+
       margin-top: 18px;
     }
 
     .status {
+
       display: inline-flex;
+
       align-items: center;
+
       gap: 7px;
+
       margin-top: 10px;
+
       color: #7f8998;
     }
 
     .dot {
+
       width: 7px;
+
       height: 7px;
+
       border-radius: 50%;
+
       background: #36d399;
-      box-shadow: 0 0 10px #36d399;
+
+      box-shadow:
+        0 0 10px #36d399;
     }
 
     .error {
+
       text-align: center;
+
       color: #ff7b7b;
+
       padding: 30px;
+
       display: none;
     }
 
+    /* MOBILE */
+
     @media (max-width: 700px) {
+
       .main-card {
         padding: 24px 18px;
       }
 
       .stats {
-        grid-template-columns: repeat(2, 1fr);
+
+        grid-template-columns:
+          repeat(2, 1fr);
       }
 
       .details {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+          1fr;
       }
+
     }
+
   </style>
+
 </head>
+
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <div class="header">
-      <div class="eyebrow">FACEIT Challenge</div>
 
-      <h1>50 WINS</h1>
+  <!-- HEADER -->
 
-      <div class="subtitle">
-        <span id="nickname">WISDE</span> ·
-        <span id="month">A carregar...</span>
-      </div>
+  <div class="header">
+
+    <div class="eyebrow">
+      FACEIT Challenge
     </div>
 
-    <div class="main-card">
+    <h1>
+      50 WINS
+    </h1>
 
-      <div class="progress-section">
+    <div class="subtitle">
 
-        <div class="progress-number">
-          <span id="wins">—</span>
-          <span>/ <span id="goalDisplay">50</span></span>
-        </div>
+      <span id="nickname">
+        WISDE
+      </span>
 
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress"></div>
-        </div>
+      ·
 
-        <div class="progress-percent" id="progressText">
-          A carregar...
-        </div>
-
-        <div class="remaining">
-          <strong id="remaining">—</strong>
-          vitórias restantes
-        </div>
-
-      </div>
-
-      <!-- OBJECTIVO -->
-
-      <div class="goal-selector">
-
-        <div class="goal-title">
-          Objetivo mensal
-        </div>
-
-        <div class="goal-value">
-          <span id="goalValue">50</span> WINS
-        </div>
-
-        <input
-          id="goalSlider"
-          class="goal-slider"
-          type="range"
-          min="1"
-          max="150"
-          value="50"
-        >
-
-        <div class="slider-labels">
-          <span>1</span>
-          <span>75</span>
-          <span>150</span>
-        </div>
-
-      </div>
-
-      <!-- ESTATÍSTICAS -->
-
-      <div class="stats">
-
-        <div class="stat">
-          <div class="stat-value" id="games">—</div>
-          <div class="stat-label">Jogos</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-value" id="winsStat">—</div>
-          <div class="stat-label">Vitórias</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-value" id="losses">—</div>
-          <div class="stat-label">Derrotas</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-value" id="winRate">—</div>
-          <div class="stat-label">Win Rate</div>
-        </div>
-
-      </div>
-
-      <!-- DETALHES -->
-
-      <div class="details">
-
-        <div class="detail">
-          <div class="detail-value" id="average">—</div>
-          <div class="detail-label">
-            Vitórias / dia
-          </div>
-        </div>
-
-        <div class="detail">
-          <div class="detail-value" id="required">—</div>
-          <div class="detail-label">
-            Necessárias / dia
-          </div>
-        </div>
-
-        <div class="detail">
-          <div class="detail-value" id="days">—</div>
-          <div class="detail-label">
-            Dias restantes
-          </div>
-        </div>
-
-      </div>
-
-      <div class="footer">
-
-        <div class="status">
-          <span class="dot"></span>
-          <span id="updated">
-            A atualizar...
-          </span>
-        </div>
-
-      </div>
-
-      <div class="error" id="error">
-        Não foi possível obter os dados da FACEIT.
-      </div>
+      <span id="month">
+        A carregar...
+      </span>
 
     </div>
 
   </div>
 
-  <script>
 
-    /* ============================
-       OBJETIVO
-    ============================ */
+  <!-- MAIN -->
 
-    let selectedGoal =
-      Number(localStorage.getItem("faceitGoal")) || 50;
+  <div class="main-card">
 
 
-    const slider =
-      document.getElementById("goalSlider");
+    <!-- PROGRESS -->
 
-    const goalValue =
-      document.getElementById("goalValue");
-
-    slider.value = selectedGoal;
-
-    goalValue.textContent = selectedGoal;
+    <div class="progress-section">
 
 
-    slider.addEventListener("input", function () {
+      <div class="progress-number">
+
+        <span id="wins">
+          —
+        </span>
+
+        <span>
+          /
+          <span id="goalDisplay">
+            50
+          </span>
+        </span>
+
+      </div>
+
+
+      <div class="progress-bar">
+
+        <div
+          class="progress-fill"
+          id="progress">
+        </div>
+
+      </div>
+
+
+      <div
+        class="progress-percent"
+        id="progressText">
+
+        A carregar...
+
+      </div>
+
+
+      <div class="remaining">
+
+        <strong id="remaining">
+          —
+        </strong>
+
+        vitórias restantes
+
+      </div>
+
+
+    </div>
+
+
+    <!-- GOAL -->
+
+    <div class="goal-selector">
+
+      <div class="goal-title">
+        Objetivo mensal
+      </div>
+
+
+      <div class="goal-value">
+
+        <span id="goalValue">
+          50
+        </span>
+
+        WINS
+
+      </div>
+
+
+      <input
+        id="goalSlider"
+        class="goal-slider"
+        type="range"
+        min="1"
+        max="150"
+        value="50"
+      >
+
+
+      <div class="slider-labels">
+
+        <span>
+          1
+        </span>
+
+        <span>
+          75
+        </span>
+
+        <span>
+          150
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div class="pace-status">
+
+      <span
+        id="statusDot"
+        class="status-dot status-green">
+      </span>
+
+      <span id="paceStatus">
+        A calcular ritmo...
+      </span>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="games">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Jogos
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winsStat">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Vitórias
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="losses">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Derrotas
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winRate">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Win Rate
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- DETAILS -->
+
+    <div class="details">
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="average">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Ritmo atual
+        </div>
+
+      </div>
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="required">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Ritmo necessário
+        </div>
+
+      </div>
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="days">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Dias restantes
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- FOOTER -->
+
+    <div class="footer">
+
+      <div class="status">
+
+        <span class="dot"></span>
+
+        <span id="updated">
+          A atualizar...
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="error"
+      id="error">
+
+      Não foi possível obter os dados da FACEIT.
+
+    </div>
+
+
+  </div>
+
+</div>
+
+
+<script>
+
+
+  /* ==========================
+     OBJECTIVO
+  ========================== */
+
+
+  let selectedGoal =
+    Number(
+      localStorage.getItem(
+        "faceitGoal"
+      )
+    ) || 50;
+
+
+  const slider =
+    document.getElementById(
+      "goalSlider"
+    );
+
+
+  const goalValue =
+    document.getElementById(
+      "goalValue"
+    );
+
+
+  slider.value =
+    selectedGoal;
+
+
+  goalValue.textContent =
+    selectedGoal;
+
+
+  slider.addEventListener(
+    "input",
+    function () {
 
       selectedGoal =
-        Number(this.value);
+        Number(
+          this.value
+        );
+
 
       goalValue.textContent =
         selectedGoal;
 
-      document.getElementById("goalDisplay")
-        .textContent = selectedGoal;
+
+      document.getElementById(
+        "goalDisplay"
+      ).textContent =
+        selectedGoal;
+
 
       localStorage.setItem(
         "faceitGoal",
         selectedGoal
       );
 
+
       if (window.latestData) {
-        updatePanel(window.latestData);
+
+        updatePanel(
+          window.latestData
+        );
+
       }
 
-    });
+    }
+  );
 
 
-    /* ============================
-       ATUALIZAR PAINEL
-    ============================ */
-
-    function updatePanel(data) {
-
-      const goal =
-        selectedGoal;
-
-      const wins =
-        data.wins;
-
-      const winsRemaining =
-        Math.max(
-          goal - wins,
-          0
-        );
-
-      const progress =
-        Math.min(
-          (wins / goal) * 100,
-          100
-        );
-
-      const daysRemaining =
-        data.daysRemaining;
-
-      const requiredPerDay =
-        daysRemaining > 0
-          ? winsRemaining / daysRemaining
-          : winsRemaining;
+  /* ==========================
+     ACTUALIZAR PAINEL
+  ========================== */
 
 
-      document.getElementById("goalValue")
-        .textContent = goal;
-
-      document.getElementById("goalDisplay")
-        .textContent = goal;
-
-      document.getElementById("nickname")
-        .textContent =
-        data.nickname.toUpperCase();
-
-      document.getElementById("month")
-        .textContent =
-        `${data.month} ${data.year}`;
-
-      document.getElementById("wins")
-        .textContent = wins;
-
-      document.getElementById("winsStat")
-        .textContent = wins;
-
-      document.getElementById("games")
-        .textContent = data.games;
-
-      document.getElementById("losses")
-        .textContent = data.losses;
-
-      document.getElementById("winRate")
-        .textContent =
-        `${data.winRate}%`;
-
-      document.getElementById("remaining")
-        .textContent =
-        winsRemaining;
-
-      document.getElementById("average")
-        .textContent =
-        data.averagePerDay;
-
-      document.getElementById("required")
-        .textContent =
-        requiredPerDay.toFixed(2);
-
-      document.getElementById("days")
-        .textContent =
-        daysRemaining;
-
-      document.getElementById("progress")
-        .style.width =
-        `${progress}%`;
-
-      document.getElementById("progressText")
-        .textContent =
-        `${progress.toFixed(1)}% concluído`;
+  function updatePanel(data) {
 
 
-      const updated =
-        new Date(data.updatedAt);
+    const goal =
+      selectedGoal;
 
-      document.getElementById("updated")
-        .textContent =
-        `Atualizado às ${
-          updated.toLocaleTimeString(
-            "pt-PT",
-            {
-              hour: "2-digit",
-              minute: "2-digit"
-            }
-          )
-        }`;
 
-      document.getElementById("error")
-        .style.display =
-        "none";
+    const wins =
+      data.wins;
+
+
+    const winsRemaining =
+      Math.max(
+        goal - wins,
+        0
+      );
+
+
+    const progress =
+      Math.min(
+        (wins / goal) * 100,
+        100
+      );
+
+
+    const daysRemaining =
+      data.daysRemaining;
+
+
+    const averagePerDay =
+      data.averagePerDay;
+
+
+    const requiredPerDay =
+      daysRemaining > 0
+        ? winsRemaining /
+          daysRemaining
+        : winsRemaining;
+
+
+    /* HEADER */
+
+
+    document.getElementById(
+      "nickname"
+    ).textContent =
+      data.nickname.toUpperCase();
+
+
+    document.getElementById(
+      "month"
+    ).textContent =
+      `${data.month} ${data.year}`;
+
+
+    /* PROGRESS */
+
+
+    document.getElementById(
+      "goalValue"
+    ).textContent =
+      goal;
+
+
+    document.getElementById(
+      "goalDisplay"
+    ).textContent =
+      goal;
+
+
+    document.getElementById(
+      "wins"
+    ).textContent =
+      wins;
+
+
+    document.getElementById(
+      "remaining"
+    ).textContent =
+      winsRemaining;
+
+
+    document.getElementById(
+      "progress"
+    ).style.width =
+      `${progress}%`;
+
+
+    document.getElementById(
+      "progressText"
+    ).textContent =
+      `${progress.toFixed(1)}% concluído`;
+
+
+    /* STATS */
+
+
+    document.getElementById(
+      "games"
+    ).textContent =
+      data.games;
+
+
+    document.getElementById(
+      "winsStat"
+    ).textContent =
+      wins;
+
+
+    document.getElementById(
+      "losses"
+    ).textContent =
+      data.losses;
+
+
+    document.getElementById(
+      "winRate"
+    ).textContent =
+      `${data.winRate}%`;
+
+
+    /* DETAILS */
+
+
+    document.getElementById(
+      "average"
+    ).textContent =
+      averagePerDay;
+
+
+    document.getElementById(
+      "required"
+    ).textContent =
+      requiredPerDay.toFixed(2);
+
+
+    document.getElementById(
+      "days"
+    ).textContent =
+      daysRemaining;
+
+
+    /* ==========================
+       STATUS
+    ========================== */
+
+
+    const status =
+      document.getElementById(
+        "paceStatus"
+      );
+
+
+    const statusDot =
+      document.getElementById(
+        "statusDot"
+      );
+
+
+    /*
+      Calculamos quantas vitórias
+      deverias ter neste momento
+      para estar exatamente no ritmo.
+    */
+
+
+    const now =
+      new Date();
+
+
+    const dayOfMonth =
+      now.getDate();
+
+
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0
+      ).getDate();
+
+
+    const expectedWins =
+      goal *
+      (
+        dayOfMonth /
+        daysInMonth
+      );
+
+
+    /*
+      Margem de 1 vitória para
+      evitar mudanças constantes
+      entre estados.
+    */
+
+
+    if (
+      wins >=
+      expectedWins + 1
+    ) {
+
+      status.textContent =
+        "À frente do ritmo";
+
+
+      statusDot.className =
+        "status-dot status-green";
+
+    }
+
+    else if (
+      wins >=
+      expectedWins - 1
+    ) {
+
+      status.textContent =
+        "No ritmo";
+
+
+      statusDot.className =
+        "status-dot status-yellow";
+
+    }
+
+    else {
+
+      status.textContent =
+        "Atrasado";
+
+
+      statusDot.className =
+        "status-dot status-red";
+
     }
 
 
-    /* ============================
-       OBTER DADOS FACEIT
-    ============================ */
+    /* UPDATE TIME */
 
-    async function loadStats() {
 
-      try {
+    const updated =
+      new Date(
+        data.updatedAt
+      );
 
-        const response =
-          await fetch("/api/stats");
 
-        if (!response.ok) {
-          throw new Error(
-            "API error"
-          );
-        }
+    document.getElementById(
+      "updated"
+    ).textContent =
+      `Atualizado às ${
+        updated.toLocaleTimeString(
+          "pt-PT",
+          {
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        )
+      }`;
 
-        const data =
-          await response.json();
 
-        window.latestData =
-          data;
+    document.getElementById(
+      "error"
+    ).style.display =
+      "none";
 
-        updatePanel(data);
+  }
 
-      } catch (error) {
 
-        console.error(error);
+  /* ==========================
+     API
+  ========================== */
 
-        document.getElementById("error")
-          .style.display =
-          "block";
+
+  async function loadStats() {
+
+
+    try {
+
+
+      const response =
+        await fetch(
+          "/api/stats"
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          "API error"
+        );
+
       }
+
+
+      const data =
+        await response.json();
+
+
+      window.latestData =
+        data;
+
+
+      updatePanel(
+        data
+      );
+
+
     }
 
-
-    /* ============================
-       INICIAR
-    ============================ */
-
-    loadStats();
+    catch (error) {
 
 
-    /* Atualiza a cada 5 minutos */
+      console.error(
+        error
+      );
 
-    setInterval(
-      loadStats,
-      5 * 60 * 1000
-    );
 
-  </script>
+      document.getElementById(
+        "error"
+      ).style.display =
+        "block";
+
+    }
+
+  }
+
+
+  /* ==========================
+     START
+  ========================== */
+
+
+  loadStats();
+
+
+  /*
+    Actualiza automaticamente
+    a cada 5 minutos.
+  */
+
+  setInterval(
+    loadStats,
+    5 * 60 * 1000
+  );
+
+
+</script>
 
 </body>
 </html>
