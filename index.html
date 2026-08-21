@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WISDE — 50 Wins Challenge</title>
+  <title>WISDE — FACEIT Challenge</title>
 
   <style>
     * {
@@ -91,7 +91,7 @@
       width: 0%;
       border-radius: inherit;
       background: linear-gradient(90deg, #36d399, #62f5b0);
-      transition: width 1s ease;
+      transition: width 0.5s ease;
     }
 
     .progress-percent {
@@ -107,6 +107,50 @@
 
     .remaining strong {
       color: white;
+    }
+
+    /* OBJECTIVE SLIDER */
+
+    .goal-selector {
+      margin: 30px auto 5px;
+      max-width: 600px;
+      text-align: center;
+      padding: 20px;
+      background: #181c24;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .goal-title {
+      color: #8d96a4;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .goal-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .goal-value span {
+      color: #36d399;
+    }
+
+    .goal-slider {
+      width: 100%;
+      cursor: pointer;
+      accent-color: #36d399;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #68717f;
+      font-size: 11px;
+      margin-top: 5px;
     }
 
     .stats {
@@ -215,10 +259,12 @@
 
     <div class="header">
       <div class="eyebrow">FACEIT Challenge</div>
+
       <h1>50 WINS</h1>
+
       <div class="subtitle">
         <span id="nickname">WISDE</span> ·
-        <span id="month">August 2026</span>
+        <span id="month">A carregar...</span>
       </div>
     </div>
 
@@ -228,15 +274,15 @@
 
         <div class="progress-number">
           <span id="wins">—</span>
-          <span>/ 50</span>
+          <span>/ <span id="goalDisplay">50</span></span>
         </div>
 
         <div class="progress-bar">
           <div class="progress-fill" id="progress"></div>
         </div>
 
-        <div class="progress-percent">
-          <span id="progressText">A carregar...</span>
+        <div class="progress-percent" id="progressText">
+          A carregar...
         </div>
 
         <div class="remaining">
@@ -245,6 +291,37 @@
         </div>
 
       </div>
+
+      <!-- OBJECTIVO -->
+
+      <div class="goal-selector">
+
+        <div class="goal-title">
+          Objetivo mensal
+        </div>
+
+        <div class="goal-value">
+          <span id="goalValue">50</span> WINS
+        </div>
+
+        <input
+          id="goalSlider"
+          class="goal-slider"
+          type="range"
+          min="1"
+          max="150"
+          value="50"
+        >
+
+        <div class="slider-labels">
+          <span>1</span>
+          <span>75</span>
+          <span>150</span>
+        </div>
+
+      </div>
+
+      <!-- ESTATÍSTICAS -->
 
       <div class="stats">
 
@@ -270,30 +347,42 @@
 
       </div>
 
+      <!-- DETALHES -->
+
       <div class="details">
 
         <div class="detail">
           <div class="detail-value" id="average">—</div>
-          <div class="detail-label">Vitórias / dia</div>
+          <div class="detail-label">
+            Vitórias / dia
+          </div>
         </div>
 
         <div class="detail">
           <div class="detail-value" id="required">—</div>
-          <div class="detail-label">Necessárias / dia</div>
+          <div class="detail-label">
+            Necessárias / dia
+          </div>
         </div>
 
         <div class="detail">
           <div class="detail-value" id="days">—</div>
-          <div class="detail-label">Dias restantes</div>
+          <div class="detail-label">
+            Dias restantes
+          </div>
         </div>
 
       </div>
 
       <div class="footer">
+
         <div class="status">
           <span class="dot"></span>
-          <span id="updated">A atualizar...</span>
+          <span id="updated">
+            A atualizar...
+          </span>
         </div>
+
       </div>
 
       <div class="error" id="error">
@@ -306,81 +395,206 @@
 
   <script>
 
+    /* ============================
+       OBJETIVO
+    ============================ */
+
+    let selectedGoal =
+      Number(localStorage.getItem("faceitGoal")) || 50;
+
+
+    const slider =
+      document.getElementById("goalSlider");
+
+    const goalValue =
+      document.getElementById("goalValue");
+
+    slider.value = selectedGoal;
+
+    goalValue.textContent = selectedGoal;
+
+
+    slider.addEventListener("input", function () {
+
+      selectedGoal =
+        Number(this.value);
+
+      goalValue.textContent =
+        selectedGoal;
+
+      document.getElementById("goalDisplay")
+        .textContent = selectedGoal;
+
+      localStorage.setItem(
+        "faceitGoal",
+        selectedGoal
+      );
+
+      if (window.latestData) {
+        updatePanel(window.latestData);
+      }
+
+    });
+
+
+    /* ============================
+       ATUALIZAR PAINEL
+    ============================ */
+
+    function updatePanel(data) {
+
+      const goal =
+        selectedGoal;
+
+      const wins =
+        data.wins;
+
+      const winsRemaining =
+        Math.max(
+          goal - wins,
+          0
+        );
+
+      const progress =
+        Math.min(
+          (wins / goal) * 100,
+          100
+        );
+
+      const daysRemaining =
+        data.daysRemaining;
+
+      const requiredPerDay =
+        daysRemaining > 0
+          ? winsRemaining / daysRemaining
+          : winsRemaining;
+
+
+      document.getElementById("goalValue")
+        .textContent = goal;
+
+      document.getElementById("goalDisplay")
+        .textContent = goal;
+
+      document.getElementById("nickname")
+        .textContent =
+        data.nickname.toUpperCase();
+
+      document.getElementById("month")
+        .textContent =
+        `${data.month} ${data.year}`;
+
+      document.getElementById("wins")
+        .textContent = wins;
+
+      document.getElementById("winsStat")
+        .textContent = wins;
+
+      document.getElementById("games")
+        .textContent = data.games;
+
+      document.getElementById("losses")
+        .textContent = data.losses;
+
+      document.getElementById("winRate")
+        .textContent =
+        `${data.winRate}%`;
+
+      document.getElementById("remaining")
+        .textContent =
+        winsRemaining;
+
+      document.getElementById("average")
+        .textContent =
+        data.averagePerDay;
+
+      document.getElementById("required")
+        .textContent =
+        requiredPerDay.toFixed(2);
+
+      document.getElementById("days")
+        .textContent =
+        daysRemaining;
+
+      document.getElementById("progress")
+        .style.width =
+        `${progress}%`;
+
+      document.getElementById("progressText")
+        .textContent =
+        `${progress.toFixed(1)}% concluído`;
+
+
+      const updated =
+        new Date(data.updatedAt);
+
+      document.getElementById("updated")
+        .textContent =
+        `Atualizado às ${
+          updated.toLocaleTimeString(
+            "pt-PT",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          )
+        }`;
+
+      document.getElementById("error")
+        .style.display =
+        "none";
+    }
+
+
+    /* ============================
+       OBTER DADOS FACEIT
+    ============================ */
+
     async function loadStats() {
 
       try {
 
-        const response = await fetch("/api/stats");
+        const response =
+          await fetch("/api/stats");
 
         if (!response.ok) {
-          throw new Error("API error");
+          throw new Error(
+            "API error"
+          );
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
-        document.getElementById("nickname").textContent =
-          data.nickname.toUpperCase();
+        window.latestData =
+          data;
 
-        document.getElementById("month").textContent =
-          `${data.month} ${data.year}`;
-
-        document.getElementById("wins").textContent =
-          data.wins;
-
-        document.getElementById("winsStat").textContent =
-          data.wins;
-
-        document.getElementById("games").textContent =
-          data.games;
-
-        document.getElementById("losses").textContent =
-          data.losses;
-
-        document.getElementById("winRate").textContent =
-          `${data.winRate}%`;
-
-        document.getElementById("remaining").textContent =
-          data.winsRemaining;
-
-        document.getElementById("average").textContent =
-          data.averagePerDay;
-
-        document.getElementById("required").textContent =
-          data.requiredPerDay;
-
-        document.getElementById("days").textContent =
-          data.daysRemaining;
-
-        document.getElementById("progress").style.width =
-          `${data.progress}%`;
-
-        document.getElementById("progressText").textContent =
-          `${data.progress}% concluído`;
-
-        const updated = new Date(data.updatedAt);
-
-        document.getElementById("updated").textContent =
-          `Atualizado às ${updated.toLocaleTimeString("pt-PT", {
-            hour: "2-digit",
-            minute: "2-digit"
-          })}`;
-
-        document.getElementById("error").style.display = "none";
+        updatePanel(data);
 
       } catch (error) {
 
         console.error(error);
 
-        document.getElementById("error").style.display = "block";
-
+        document.getElementById("error")
+          .style.display =
+          "block";
       }
-
     }
+
+
+    /* ============================
+       INICIAR
+    ============================ */
 
     loadStats();
 
-    // Atualiza automaticamente a cada 5 minutos
-    setInterval(loadStats, 5 * 60 * 1000);
+
+    /* Atualiza a cada 5 minutos */
+
+    setInterval(
+      loadStats,
+      5 * 60 * 1000
+    );
 
   </script>
 
