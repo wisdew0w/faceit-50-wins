@@ -22,19 +22,21 @@ app.get("/api/stats", async (req, res) => {
       Accept: "application/json"
     };
 
-    // 1. Encontrar o jogador
+    // Encontrar o jogador
     const playerResponse = await fetch(
       `https://open.faceit.com/data/v4/players?nickname=${encodeURIComponent(nickname)}`,
       { headers }
     );
 
     if (!playerResponse.ok) {
-      throw new Error(`Erro ao procurar jogador: ${playerResponse.status}`);
+      throw new Error(
+        `Erro ao procurar jogador: ${playerResponse.status}`
+      );
     }
 
     const player = await playerResponse.json();
 
-    // 2. Definir o período: mês atual
+    // Início do mês
     const now = new Date();
 
     const startOfMonth = new Date(
@@ -43,18 +45,13 @@ app.get("/api/stats", async (req, res) => {
       1
     );
 
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1
+    const startTimestamp = Math.floor(
+      startOfMonth.getTime() / 1000
     );
 
-    const from = Math.floor(startOfMonth.getTime() / 1000);
-    const to = Math.floor(endOfMonth.getTime() / 1000);
-
-    // 3. Obter partidas de CS2
+    // Obter histórico de partidas do jogador
     const matchesResponse = await fetch(
-      `https://open.faceit.com/data/v4/players/${player.player_id}/games/cs2/matches?from=${from}&to=${to}&limit=100`,
+      `https://open.faceit.com/data/v4/players/${player.player_id}/history?game=cs2&from=${startTimestamp}&limit=100`,
       { headers }
     );
 
@@ -65,48 +62,59 @@ app.get("/api/stats", async (req, res) => {
     }
 
     const matchesData = await matchesResponse.json();
+
     const matches = matchesData.items || [];
 
     let wins = 0;
     let losses = 0;
 
-    // 4. Determinar o resultado de cada partida
+    // Verificar cada partida
     for (const match of matches) {
-      if (!match.results?.winner || !match.teams) {
+
+      if (!match.match_id) {
         continue;
       }
 
-      const winner = match.results.winner;
+      const matchResponse = await fetch(
+        `https://open.faceit.com/data/v4/matches/${match.match_id}`,
+        { headers }
+      );
 
-      const playerInFaction1 =
-        match.teams.faction1?.players?.some(
+      if (!matchResponse.ok) {
+        continue;
+      }
+
+      const matchData = await matchResponse.json();
+
+      const playerFaction =
+        matchData.teams?.faction1?.players?.some(
           p => p.player_id === player.player_id
-        );
+        )
+          ? "faction1"
+          : matchData.teams?.faction2?.players?.some(
+              p => p.player_id === player.player_id
+            )
+          ? "faction2"
+          : null;
 
-      const playerInFaction2 =
-        match.teams.faction2?.players?.some(
-          p => p.player_id === player.player_id
-        );
+      if (!playerFaction) {
+        continue;
+      }
 
-      if (playerInFaction1) {
-        if (winner === "faction1") {
-          wins++;
-        } else if (winner === "faction2") {
-          losses++;
-        }
-      } else if (playerInFaction2) {
-        if (winner === "faction2") {
-          wins++;
-        } else if (winner === "faction1") {
-          losses++;
-        }
+      if (matchData.results?.winner === playerFaction) {
+        wins++;
+      } else {
+        losses++;
       }
     }
 
     const games = wins + losses;
-    const winRate = games > 0 ? (wins / games) * 100 : 0;
 
-    // 5. Objetivo
+    const winRate =
+      games > 0
+        ? (wins / games) * 100
+        : 0;
+
     const goal = 50;
 
     const today = now.getDate();
@@ -117,22 +125,24 @@ app.get("/api/stats", async (req, res) => {
       0
     ).getDate();
 
-    const daysRemaining = Math.max(daysInMonth - today, 0);
+    const daysRemaining =
+      Math.max(daysInMonth - today, 0);
 
-    const winsRemaining = Math.max(goal - wins, 0);
+    const winsRemaining =
+      Math.max(goal - wins, 0);
 
     const averagePerDay =
-      today > 0 ? wins / today : 0;
+      today > 0
+        ? wins / today
+        : 0;
 
     const requiredPerDay =
       daysRemaining > 0
         ? winsRemaining / daysRemaining
         : winsRemaining;
 
-    const progress = Math.min(
-      (wins / goal) * 100,
-      100
-    );
+    const progress =
+      Math.min((wins / goal) * 100, 100);
 
     res.json({
       nickname: player.nickname,
@@ -149,17 +159,24 @@ app.get("/api/stats", async (req, res) => {
       winsRemaining,
 
       winRate: Number(winRate.toFixed(1)),
-      averagePerDay: Number(averagePerDay.toFixed(2)),
-      requiredPerDay: Number(requiredPerDay.toFixed(2)),
+
+      averagePerDay:
+        Number(averagePerDay.toFixed(2)),
+
+      requiredPerDay:
+        Number(requiredPerDay.toFixed(2)),
 
       daysRemaining,
 
-      progress: Number(progress.toFixed(1)),
+      progress:
+        Number(progress.toFixed(1)),
 
-      updatedAt: new Date().toISOString()
+      updatedAt:
+        new Date().toISOString()
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
