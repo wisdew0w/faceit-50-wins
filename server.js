@@ -15,12 +15,12 @@ app.get("/api/stats", async (req, res) => {
       });
     }
 
-    const nickname = "wisde";
-
     const headers = {
       Authorization: `Bearer ${apiKey}`,
       Accept: "application/json"
     };
+
+    const nickname = "wisde";
 
     // Encontrar o jogador
     const playerResponse = await fetch(
@@ -36,74 +36,97 @@ app.get("/api/stats", async (req, res) => {
 
     const player = await playerResponse.json();
 
-    // Início do mês
+    // Início e fim do mês atual
     const now = new Date();
 
     const startOfMonth = new Date(
       now.getFullYear(),
       now.getMonth(),
-      1
+      1,
+      0,
+      0,
+      0
     );
 
-    const startTimestamp = Math.floor(
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+      0,
+      0,
+      0
+    );
+
+    const from = Math.floor(
       startOfMonth.getTime() / 1000
     );
 
-    // Obter histórico de partidas do jogador
+    const to = Math.floor(
+      endOfMonth.getTime() / 1000
+    );
+
+    // Histórico de CS2
     const matchesResponse = await fetch(
-      `https://open.faceit.com/data/v4/players/${player.player_id}/history?game=cs2&from=${startTimestamp}&limit=100`,
+      `https://open.faceit.com/data/v4/players/${player.player_id}/history?game=cs2&from=${from}&to=${to}&limit=100`,
       { headers }
     );
 
     if (!matchesResponse.ok) {
       throw new Error(
-        `Erro ao obter partidas: ${matchesResponse.status}`
+        `Erro ao obter histórico: ${matchesResponse.status}`
       );
     }
 
-    const matchesData = await matchesResponse.json();
+    const matchesData =
+      await matchesResponse.json();
 
-    const matches = matchesData.items || [];
+    const matches =
+      matchesData.items || [];
 
     let wins = 0;
     let losses = 0;
 
-    // Verificar cada partida
+    // Contar vitórias e derrotas
     for (const match of matches) {
 
-      if (!match.match_id) {
+      // Só partidas terminadas
+      if (match.status !== "finished") {
         continue;
       }
 
-      const matchResponse = await fetch(
-        `https://open.faceit.com/data/v4/matches/${match.match_id}`,
-        { headers }
-      );
+      // Procurar em que equipa está o jogador
+      let playerTeam = null;
 
-      if (!matchResponse.ok) {
+      for (const [teamId, team] of Object.entries(
+        match.teams || {}
+      )) {
+
+        const found =
+          (team.players || []).some(
+            p =>
+              p.player_id === player.player_id
+          );
+
+        if (found) {
+          playerTeam = teamId;
+          break;
+        }
+      }
+
+      if (!playerTeam) {
         continue;
       }
 
-      const matchData = await matchResponse.json();
-
-      const playerFaction =
-        matchData.teams?.faction1?.players?.some(
-          p => p.player_id === player.player_id
-        )
-          ? "faction1"
-          : matchData.teams?.faction2?.players?.some(
-              p => p.player_id === player.player_id
-            )
-          ? "faction2"
-          : null;
-
-      if (!playerFaction) {
-        continue;
-      }
-
-      if (matchData.results?.winner === playerFaction) {
+      // O vencedor vem identificado pelo ID da equipa
+      if (
+        match.results &&
+        match.results.winner === playerTeam
+      ) {
         wins++;
-      } else {
+      } else if (
+        match.results &&
+        match.results.winner
+      ) {
         losses++;
       }
     }
@@ -115,21 +138,31 @@ app.get("/api/stats", async (req, res) => {
         ? (wins / games) * 100
         : 0;
 
+    // Objetivo padrão
+    // O objetivo escolhido no site é tratado pelo frontend.
     const goal = 50;
 
-    const today = now.getDate();
+    const today =
+      now.getDate();
 
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0
-    ).getDate();
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0
+      ).getDate();
 
     const daysRemaining =
-      Math.max(daysInMonth - today, 0);
+      Math.max(
+        daysInMonth - today,
+        0
+      );
 
     const winsRemaining =
-      Math.max(goal - wins, 0);
+      Math.max(
+        goal - wins,
+        0
+      );
 
     const averagePerDay =
       today > 0
@@ -142,37 +175,56 @@ app.get("/api/stats", async (req, res) => {
         : winsRemaining;
 
     const progress =
-      Math.min((wins / goal) * 100, 100);
+      Math.min(
+        (wins / goal) * 100,
+        100
+      );
 
     res.json({
       nickname: player.nickname,
-      month: now.toLocaleString("en-US", {
-        month: "long"
-      }),
+
+      month: now.toLocaleString(
+        "en-US",
+        { month: "long" }
+      ),
+
       year: now.getFullYear(),
 
       goal,
+
       wins,
       losses,
       games,
 
       winsRemaining,
 
-      winRate: Number(winRate.toFixed(1)),
+      winRate:
+        Number(
+          winRate.toFixed(1)
+        ),
 
       averagePerDay:
-        Number(averagePerDay.toFixed(2)),
+        Number(
+          averagePerDay.toFixed(2)
+        ),
 
       requiredPerDay:
-        Number(requiredPerDay.toFixed(2)),
+        Number(
+          requiredPerDay.toFixed(2)
+        ),
 
       daysRemaining,
 
       progress:
-        Number(progress.toFixed(1)),
+        Number(
+          progress.toFixed(1)
+        ),
 
       updatedAt:
-        new Date().toISOString()
+        new Date().toISOString(),
+
+      matchesFound:
+        matches.length
     });
 
   } catch (error) {
@@ -180,12 +232,17 @@ app.get("/api/stats", async (req, res) => {
     console.error(error);
 
     res.status(500).json({
-      error: "Não foi possível obter os dados da FACEIT.",
-      details: error.message
+      error:
+        "Não foi possível obter os dados da FACEIT.",
+
+      details:
+        error.message
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 });
