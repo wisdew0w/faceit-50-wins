@@ -154,7 +154,7 @@ app.get("/api/stats", async (req, res) => {
 
     const daysRemaining =
       Math.max(
-        daysInMonth - today,
+        daysInMonth - today +1,
         0
       );
 
