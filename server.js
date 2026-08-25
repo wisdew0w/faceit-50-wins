@@ -40,7 +40,7 @@ app.get("/api/stats", async (req, res) => {
     const player = await playerResponse.json();
 
     // ==========================
-    // DATAS DO DESAFIO
+    // DATAS DO MÊS
     // ==========================
 
     const now = new Date();
@@ -63,6 +63,7 @@ app.get("/api/stats", async (req, res) => {
       0
     );
 
+    // Histórico: segundos
     const from = Math.floor(
       startOfMonth.getTime() / 1000
     );
@@ -71,8 +72,15 @@ app.get("/api/stats", async (req, res) => {
       endOfMonth.getTime() / 1000
     );
 
+    // Estatísticas: MILISSEGUNDOS
+    const statsFrom =
+      startOfMonth.getTime();
+
+    const statsTo =
+      endOfMonth.getTime();
+
     // ==========================
-    // HISTÓRICO DE PARTIDAS
+    // HISTÓRICO
     // ==========================
 
     const matchesResponse = await fetch(
@@ -132,7 +140,8 @@ app.get("/api/stats", async (req, res) => {
         match.results.winner === playerTeam
       ) {
         wins++;
-      } else if (
+      }
+      else if (
         match.results &&
         match.results.winner
       ) {
@@ -141,7 +150,7 @@ app.get("/api/stats", async (req, res) => {
     }
 
     // ==========================
-    // ESTATÍSTICAS INDIVIDUAIS
+    // K/D E RATING
     // ==========================
 
     let totalKills = 0;
@@ -150,84 +159,89 @@ app.get("/api/stats", async (req, res) => {
     let totalRating = 0;
     let ratingCount = 0;
 
-    const statsResponse = await fetch(
-      `https://open.faceit.com/data/v4/players/${player.player_id}/games/cs2/stats?from=${from}&to=${to}&limit=100`,
-      { headers }
-    );
+    try {
 
-    if (statsResponse.ok) {
+      const statsResponse = await fetch(
+        `https://open.faceit.com/data/v4/players/${player.player_id}/games/cs2/stats?from=${statsFrom}&to=${statsTo}&limit=100`,
+        { headers }
+      );
 
-      const statsData =
-        await statsResponse.json();
+      if (statsResponse.ok) {
 
-      const statMatches =
-        statsData.items || [];
+        const statsData =
+          await statsResponse.json();
 
-      for (const item of statMatches) {
+        const statMatches =
+          statsData.items || [];
 
-        const stats =
-          item.stats || {};
+        console.log(
+          `Stats FACEIT encontradas: ${statMatches.length}`
+        );
 
-        // ==========================
-        // KILLS
-        // ==========================
+        for (const item of statMatches) {
 
-        const kills =
-          Number(
-            stats["Kills"] ??
-            stats["kills"]
-          );
+          const stats =
+            item.stats || {};
 
-        if (Number.isFinite(kills)) {
-          totalKills += kills;
-        }
+          // --------------------------
+          // KILLS
+          // --------------------------
 
-        // ==========================
-        // DEATHS
-        // ==========================
+          const kills =
+            Number(
+              stats.Kills ??
+              stats.kills
+            );
 
-        const deaths =
-          Number(
-            stats["Deaths"] ??
-            stats["deaths"]
-          );
+          if (Number.isFinite(kills)) {
+            totalKills += kills;
+          }
 
-        if (Number.isFinite(deaths)) {
-          totalDeaths += deaths;
-        }
+          // --------------------------
+          // DEATHS
+          // --------------------------
 
-        // ==========================
-        // FACEIT RATING
-        // ==========================
+          const deaths =
+            Number(
+              stats.Deaths ??
+              stats.deaths
+            );
 
-        const ratingValues = [
-          stats["Rating"],
-          stats["rating"],
-          stats["Faceit Rating"],
-          stats["FACEIT Rating"],
-          stats["Faceit Rating 2.0"],
-          stats["Rating 2.0"]
-        ];
+          if (Number.isFinite(deaths)) {
+            totalDeaths += deaths;
+          }
 
-        for (const value of ratingValues) {
+          // --------------------------
+          // RATING
+          // --------------------------
 
           const rating =
-            Number(value);
+            Number(
+              stats.Rating ??
+              stats.rating
+            );
 
           if (Number.isFinite(rating)) {
-
             totalRating += rating;
             ratingCount++;
-
-            break;
           }
         }
+
+      } else {
+
+        console.log(
+          `Stats FACEIT indisponíveis: ${statsResponse.status}`
+        );
+
       }
-    } else {
+
+    } catch (statsError) {
 
       console.log(
-        `Aviso: não foi possível obter as estatísticas individuais: ${statsResponse.status}`
+        "Erro ao obter K/D e Rating:",
+        statsError.message
       );
+
     }
 
     // ==========================
@@ -311,7 +325,9 @@ app.get("/api/stats", async (req, res) => {
       month:
         now.toLocaleString(
           "en-US",
-          { month: "long" }
+          {
+            month: "long"
+          }
         ),
 
       year:
@@ -330,12 +346,13 @@ app.get("/api/stats", async (req, res) => {
           winRate.toFixed(1)
         ),
 
-      // NOVAS ESTATÍSTICAS
+      // NOVO
       kd:
         Number(
           kd.toFixed(2)
         ),
 
+      // NOVO
       averageRating:
         averageRating !== null
           ? Number(
@@ -372,20 +389,27 @@ app.get("/api/stats", async (req, res) => {
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "ERRO /api/stats:",
+      error
+    );
 
     res.status(500).json({
+
       error:
         "Não foi possível obter os dados da FACEIT.",
 
       details:
         error.message
+
     });
   }
 });
 
 app.listen(PORT, () => {
+
   console.log(
     `Server running on port ${PORT}`
   );
+
 });
