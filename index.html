@@ -1,8 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>WISDE — FACEIT Challenge</title>
 
@@ -15,7 +21,11 @@
     }
 
     body {
-      font-family: Inter, Arial, sans-serif;
+
+      font-family:
+        Inter,
+        Arial,
+        sans-serif;
 
       background:
         radial-gradient(
@@ -30,24 +40,33 @@
       min-height: 100vh;
 
       display: flex;
+
       justify-content: center;
 
       padding: 30px 16px;
+
     }
 
     .container {
+
       width: 100%;
+
       max-width: 950px;
+
     }
 
     /* HEADER */
 
     .header {
+
       text-align: center;
+
       margin-bottom: 25px;
+
     }
 
     .eyebrow {
+
       color: #9aa4b2;
 
       font-size: 13px;
@@ -57,22 +76,28 @@
       text-transform: uppercase;
 
       margin-bottom: 8px;
+
     }
 
     h1 {
-      font-size: clamp(30px, 6vw, 52px);
+
+      font-size:
+        clamp(30px, 6vw, 52px);
 
       font-weight: 800;
 
       letter-spacing: -2px;
+
     }
 
     .subtitle {
+
       color: #aeb6c2;
 
       margin-top: 8px;
 
       font-size: 15px;
+
     }
 
     /* MAIN CARD */
@@ -83,22 +108,27 @@
         rgba(20, 23, 31, 0.92);
 
       border:
-        1px solid rgba(255,255,255,0.08);
+        1px solid
+        rgba(255,255,255,0.08);
 
       border-radius: 24px;
 
       padding: 35px;
 
       box-shadow:
-        0 25px 80px rgba(0,0,0,0.4);
+        0 25px 80px
+        rgba(0,0,0,0.4);
 
       margin-bottom: 18px;
+
     }
 
     /* PROGRESS */
 
     .progress-section {
+
       text-align: center;
+
     }
 
     .progress-number {
@@ -109,6 +139,7 @@
       font-weight: 900;
 
       line-height: 1;
+
     }
 
     .progress-number span {
@@ -116,6 +147,7 @@
       color: #737b88;
 
       font-size: 0.45em;
+
     }
 
     .progress-bar {
@@ -131,6 +163,7 @@
       overflow: hidden;
 
       margin: 25px 0 12px;
+
     }
 
     .progress-fill {
@@ -150,6 +183,7 @@
 
       transition:
         width 0.5s ease;
+
     }
 
     .progress-percent {
@@ -157,6 +191,7 @@
       color: #8f99a7;
 
       font-size: 14px;
+
     }
 
     .remaining {
@@ -166,10 +201,13 @@
       font-size: 17px;
 
       color: #d8dde5;
+
     }
 
     .remaining strong {
+
       color: white;
+
     }
 
     /* GOAL */
@@ -190,7 +228,9 @@
       border-radius: 16px;
 
       border:
-        1px solid rgba(255,255,255,0.06);
+        1px solid
+        rgba(255,255,255,0.06);
+
     }
 
     .goal-title {
@@ -204,6 +244,7 @@
       text-transform: uppercase;
 
       margin-bottom: 8px;
+
     }
 
     .goal-value {
@@ -213,10 +254,13 @@
       font-weight: 800;
 
       margin-bottom: 14px;
+
     }
 
     .goal-value span {
+
       color: #36d399;
+
     }
 
     .goal-slider {
@@ -226,6 +270,7 @@
       cursor: pointer;
 
       accent-color: #36d399;
+
     }
 
     .slider-labels {
@@ -240,6 +285,7 @@
       font-size: 11px;
 
       margin-top: 5px;
+
     }
 
     /* STATUS */
@@ -259,6 +305,7 @@
       font-size: 15px;
 
       font-weight: 700;
+
     }
 
     .status-dot {
@@ -268,27 +315,34 @@
       height: 10px;
 
       border-radius: 50%;
+
     }
 
     .status-green {
+
       background: #36d399;
 
       box-shadow:
         0 0 12px #36d399;
+
     }
 
     .status-yellow {
+
       background: #f5c542;
 
       box-shadow:
         0 0 12px #f5c542;
+
     }
 
     .status-red {
+
       background: #ff6464;
 
       box-shadow:
         0 0 12px #ff6464;
+
     }
 
     /* STATS */
@@ -298,11 +352,12 @@
       display: grid;
 
       grid-template-columns:
-        repeat(6, 1fr);
+        repeat(5, 1fr);
 
       gap: 12px;
 
       margin-top: 25px;
+
     }
 
     .stat {
@@ -310,13 +365,15 @@
       background: #181c24;
 
       border:
-        1px solid rgba(255,255,255,0.06);
+        1px solid
+        rgba(255,255,255,0.06);
 
       border-radius: 16px;
 
-      padding: 20px 12px;
+      padding: 20px 10px;
 
       text-align: center;
+
     }
 
     .stat-value {
@@ -324,6 +381,7 @@
       font-size: 27px;
 
       font-weight: 800;
+
     }
 
     .stat-label {
@@ -337,6 +395,7 @@
       text-transform: uppercase;
 
       letter-spacing: 0.7px;
+
     }
 
     /* DETAILS */
@@ -351,6 +410,7 @@
       gap: 12px;
 
       margin-top: 12px;
+
     }
 
     .detail {
@@ -364,7 +424,9 @@
       text-align: center;
 
       border:
-        1px solid rgba(255,255,255,0.06);
+        1px solid
+        rgba(255,255,255,0.06);
+
     }
 
     .detail-value {
@@ -372,6 +434,7 @@
       font-size: 23px;
 
       font-weight: 800;
+
     }
 
     .detail-label {
@@ -381,6 +444,7 @@
       font-size: 12px;
 
       margin-top: 5px;
+
     }
 
     /* FOOTER */
@@ -394,6 +458,7 @@
       font-size: 12px;
 
       margin-top: 18px;
+
     }
 
     .status {
@@ -407,6 +472,7 @@
       margin-top: 10px;
 
       color: #7f8998;
+
     }
 
     .dot {
@@ -421,6 +487,7 @@
 
       box-shadow:
         0 0 10px #36d399;
+
     }
 
     .error {
@@ -432,6 +499,7 @@
       padding: 30px;
 
       display: none;
+
     }
 
     /* MOBILE */
@@ -439,19 +507,23 @@
     @media (max-width: 700px) {
 
       .main-card {
+
         padding: 24px 18px;
+
       }
 
       .stats {
 
         grid-template-columns:
           repeat(2, 1fr);
+
       }
 
       .details {
 
         grid-template-columns:
           1fr;
+
       }
 
     }
@@ -462,6 +534,7 @@
 
 
 <body>
+
 
 <div class="container">
 
@@ -621,38 +694,95 @@
 
     <!-- STATS -->
 
-<div class="stat">
-
-  <div
-    class="stat-value"
-    id="kd">
-
-    —
-
-  </div>
-
-  <div class="stat-label">
-    K/D
-  </div>
-
-</div>
+    <div class="stats">
 
 
-<div class="stat">
+      <div class="stat">
 
-  <div
-    class="stat-value"
-    id="averageRating">
+        <div
+          class="stat-value"
+          id="games">
 
-    —
+          —
 
-  </div>
+        </div>
 
-  <div class="stat-label">
-    Avg Rating
-  </div>
+        <div class="stat-label">
+          Jogos
+        </div>
 
-</div>
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winsStat">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Vitórias
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="losses">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Derrotas
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winRate">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Win Rate
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="kd">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          K/D
+        </div>
+
+      </div>
+
+
+    </div>
 
 
     <!-- DETAILS -->
@@ -741,6 +871,7 @@
 
 
   </div>
+
 
 </div>
 
@@ -946,18 +1077,11 @@
 
 
     document.getElementById(
-  "kd"
-).textContent =
-  data.games > 0
-    ? data.kd.toFixed(2)
-    : "—";
-
-document.getElementById(
-  "averageRating"
-).textContent =
-  data.averageRating !== null
-    ? data.averageRating.toFixed(2)
-    : "—";
+      "kd"
+    ).textContent =
+      data.kd !== undefined
+        ? data.kd.toFixed(2)
+        : "—";
 
 
     /* DETAILS */
@@ -998,13 +1122,6 @@ document.getElementById(
       );
 
 
-    /*
-      Calculamos quantas vitórias
-      deverias ter neste momento
-      para estar exatamente no ritmo.
-    */
-
-
     const now =
       new Date();
 
@@ -1027,13 +1144,6 @@ document.getElementById(
         dayOfMonth /
         daysInMonth
       );
-
-
-    /*
-      Margem de 1 vitória para
-      evitar mudanças constantes
-      entre estados.
-    */
 
 
     if (
@@ -1114,9 +1224,7 @@ document.getElementById(
 
   async function loadStats() {
 
-
     try {
-
 
       const response =
         await fetch(
@@ -1150,7 +1258,6 @@ document.getElementById(
 
     catch (error) {
 
-
       console.error(
         error
       );
@@ -1175,9 +1282,10 @@ document.getElementById(
 
 
   /*
-    Actualiza automaticamente
+    Atualiza automaticamente
     a cada 5 minutos.
   */
+
 
   setInterval(
     loadStats,
@@ -1187,5 +1295,7 @@ document.getElementById(
 
 </script>
 
+
 </body>
+
 </html>
