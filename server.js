@@ -63,7 +63,7 @@ app.get("/api/stats", async (req, res) => {
       0
     );
 
-    // Histórico: segundos
+    // Histórico usa segundos
     const from = Math.floor(
       startOfMonth.getTime() / 1000
     );
@@ -72,7 +72,7 @@ app.get("/api/stats", async (req, res) => {
       endOfMonth.getTime() / 1000
     );
 
-    // Estatísticas: MILISSEGUNDOS
+    // Stats usa milissegundos
     const statsFrom =
       startOfMonth.getTime();
 
@@ -80,7 +80,7 @@ app.get("/api/stats", async (req, res) => {
       endOfMonth.getTime();
 
     // ==========================
-    // HISTÓRICO
+    // HISTÓRICO DE CS2
     // ==========================
 
     const matchesResponse = await fetch(
@@ -141,6 +141,7 @@ app.get("/api/stats", async (req, res) => {
       ) {
         wins++;
       }
+
       else if (
         match.results &&
         match.results.winner
@@ -150,7 +151,7 @@ app.get("/api/stats", async (req, res) => {
     }
 
     // ==========================
-    // K/D E RATING
+    // ESTATÍSTICAS
     // ==========================
 
     let totalKills = 0;
@@ -175,7 +176,15 @@ app.get("/api/stats", async (req, res) => {
           statsData.items || [];
 
         console.log(
-          `Stats FACEIT encontradas: ${statMatches.length}`
+          "========================================"
+        );
+
+        console.log(
+          `STATS FACEIT ENCONTRADAS: ${statMatches.length}`
+        );
+
+        console.log(
+          "========================================"
         );
 
         for (const item of statMatches) {
@@ -183,9 +192,15 @@ app.get("/api/stats", async (req, res) => {
           const stats =
             item.stats || {};
 
-          // --------------------------
+          // MOSTRAR OS CAMPOS DEVOLVIDOS PELA FACEIT
+          console.log(
+            "STATS FACEIT:",
+            JSON.stringify(stats)
+          );
+
+          // ==========================
           // KILLS
-          // --------------------------
+          // ==========================
 
           const kills =
             Number(
@@ -197,9 +212,9 @@ app.get("/api/stats", async (req, res) => {
             totalKills += kills;
           }
 
-          // --------------------------
+          // ==========================
           // DEATHS
-          // --------------------------
+          // ==========================
 
           const deaths =
             Number(
@@ -211,9 +226,9 @@ app.get("/api/stats", async (req, res) => {
             totalDeaths += deaths;
           }
 
-          // --------------------------
+          // ==========================
           // RATING
-          // --------------------------
+          // ==========================
 
           const rating =
             Number(
@@ -227,6 +242,26 @@ app.get("/api/stats", async (req, res) => {
           }
         }
 
+        console.log(
+          "========================================"
+        );
+
+        console.log(
+          `TOTAL KILLS: ${totalKills}`
+        );
+
+        console.log(
+          `TOTAL DEATHS: ${totalDeaths}`
+        );
+
+        console.log(
+          `RATING ENCONTRADO: ${ratingCount}`
+        );
+
+        console.log(
+          "========================================"
+        );
+
       } else {
 
         console.log(
@@ -238,7 +273,7 @@ app.get("/api/stats", async (req, res) => {
     } catch (statsError) {
 
       console.log(
-        "Erro ao obter K/D e Rating:",
+        "Erro ao obter estatísticas:",
         statsError.message
       );
 
@@ -284,7 +319,6 @@ app.get("/api/stats", async (req, res) => {
         0
       ).getDate();
 
-    // Inclui o dia de hoje
     const daysRemaining =
       Math.max(
         daysInMonth - today + 1,
@@ -346,13 +380,11 @@ app.get("/api/stats", async (req, res) => {
           winRate.toFixed(1)
         ),
 
-      // NOVO
       kd:
         Number(
           kd.toFixed(2)
         ),
 
-      // NOVO
       averageRating:
         averageRating !== null
           ? Number(
@@ -401,7 +433,6 @@ app.get("/api/stats", async (req, res) => {
 
       details:
         error.message
-
     });
   }
 });
