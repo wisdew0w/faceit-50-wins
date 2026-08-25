@@ -23,7 +23,7 @@ app.get("/api/stats", async (req, res) => {
     const nickname = "wisde";
 
     // ==========================
-    // ENCONTRAR O JOGADOR
+    // ENCONTRAR JOGADOR
     // ==========================
 
     const playerResponse = await fetch(
@@ -63,7 +63,6 @@ app.get("/api/stats", async (req, res) => {
       0
     );
 
-    // Histórico usa segundos
     const from = Math.floor(
       startOfMonth.getTime() / 1000
     );
@@ -72,7 +71,6 @@ app.get("/api/stats", async (req, res) => {
       endOfMonth.getTime() / 1000
     );
 
-    // Stats usa milissegundos
     const statsFrom =
       startOfMonth.getTime();
 
@@ -80,7 +78,7 @@ app.get("/api/stats", async (req, res) => {
       endOfMonth.getTime();
 
     // ==========================
-    // HISTÓRICO DE CS2
+    // HISTÓRICO
     // ==========================
 
     const matchesResponse = await fetch(
@@ -151,14 +149,11 @@ app.get("/api/stats", async (req, res) => {
     }
 
     // ==========================
-    // ESTATÍSTICAS
+    // K/D
     // ==========================
 
     let totalKills = 0;
     let totalDeaths = 0;
-
-    let totalRating = 0;
-    let ratingCount = 0;
 
     try {
 
@@ -175,109 +170,160 @@ app.get("/api/stats", async (req, res) => {
         const statMatches =
           statsData.items || [];
 
-        console.log(
-          "========================================"
-        );
-
-        console.log(
-          `STATS FACEIT ENCONTRADAS: ${statMatches.length}`
-        );
-
-        console.log(
-          "========================================"
-        );
-
         for (const item of statMatches) {
 
           const stats =
             item.stats || {};
 
-          // MOSTRAR OS CAMPOS DEVOLVIDOS PELA FACEIT
-          console.log(
-            "STATS FACEIT:",
-            JSON.stringify(stats)
-          );
-
-          // ==========================
-          // KILLS
-          // ==========================
-
           const kills =
             Number(
-              stats.Kills ??
-              stats.kills
+              stats["Kills"]
+            );
+
+          const deaths =
+            Number(
+              stats["Deaths"]
             );
 
           if (Number.isFinite(kills)) {
             totalKills += kills;
           }
 
-          // ==========================
-          // DEATHS
-          // ==========================
-
-          const deaths =
-            Number(
-              stats.Deaths ??
-              stats.deaths
-            );
-
           if (Number.isFinite(deaths)) {
             totalDeaths += deaths;
           }
-
-          // ==========================
-          // RATING
-          // ==========================
-
-          const rating =
-            Number(
-              stats.Rating ??
-              stats.rating
-            );
-
-          if (Number.isFinite(rating)) {
-            totalRating += rating;
-            ratingCount++;
-          }
         }
-
-        console.log(
-          "========================================"
-        );
-
-        console.log(
-          `TOTAL KILLS: ${totalKills}`
-        );
-
-        console.log(
-          `TOTAL DEATHS: ${totalDeaths}`
-        );
-
-        console.log(
-          `RATING ENCONTRADO: ${ratingCount}`
-        );
-
-        console.log(
-          "========================================"
-        );
-
-      } else {
-
-        console.log(
-          `Stats FACEIT indisponíveis: ${statsResponse.status}`
-        );
-
       }
 
-    } catch (statsError) {
+    } catch (error) {
 
       console.log(
-        "Erro ao obter estatísticas:",
-        statsError.message
+        "Erro ao obter K/D:",
+        error.message
       );
 
     }
+
+    // ==========================
+    // FACEIT RATING
+    // ==========================
+
+    let totalRating = 0;
+    let ratingMatches = 0;
+
+    /*
+      A API que estamos a utilizar para as
+      estatísticas individuais não devolve
+      diretamente o campo "Rating".
+
+      Por isso tentamos obter o rating
+      diretamente da informação da partida.
+    */
+
+    for (const match of matches) {
+
+      if (match.status !== "finished") {
+        continue;
+      }
+
+      if (!match.match_id) {
+        continue;
+      }
+
+      try {
+
+        const matchResponse = await fetch(
+          `https://open.faceit.com/data/v4/matches/${match.match_id}/stats`,
+          { headers }
+        );
+
+        if (!matchResponse.ok) {
+          continue;
+        }
+
+        const matchData =
+          await matchResponse.json();
+
+        const rounds =
+          matchData.rounds || [];
+
+        for (const round of rounds) {
+
+          const teams =
+            round.teams || [];
+
+          for (const team of teams) {
+
+            const players =
+              team.players || [];
+
+            for (const p of players) {
+
+              if (
+                p.player_id !==
+                player.player_id
+              ) {
+                continue;
+              }
+
+              const stats =
+                p.player_stats || {};
+
+              /*
+                Procurar várias versões possíveis
+                do campo de rating.
+              */
+
+              const possibleRatingKeys = [
+                "Rating",
+                "rating",
+                "Faceit Rating",
+                "FACEIT Rating",
+                "Faceit Rating 2.0",
+                "Rating 2.0"
+              ];
+
+              for (
+                const key of possibleRatingKeys
+              ) {
+
+                if (
+                  stats[key] !== undefined
+                ) {
+
+                  const rating =
+                    Number(stats[key]);
+
+                  if (
+                    Number.isFinite(rating)
+                  ) {
+
+                    totalRating += rating;
+
+                    ratingMatches++;
+
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      } catch (error) {
+
+        console.log(
+          `Erro na partida ${match.match_id}:`,
+          error.message
+        );
+
+      }
+    }
+
+    const averageRating =
+      ratingMatches > 0
+        ? totalRating / ratingMatches
+        : null;
 
     // ==========================
     // CÁLCULOS
@@ -294,14 +340,7 @@ app.get("/api/stats", async (req, res) => {
     const kd =
       totalDeaths > 0
         ? totalKills / totalDeaths
-        : totalKills > 0
-          ? totalKills
-          : 0;
-
-    const averageRating =
-      ratingCount > 0
-        ? totalRating / ratingCount
-        : null;
+        : 0;
 
     // ==========================
     // OBJETIVO
@@ -395,6 +434,8 @@ app.get("/api/stats", async (req, res) => {
       totalKills,
       totalDeaths,
 
+      ratingMatches,
+
       averagePerDay:
         Number(
           averagePerDay.toFixed(2)
@@ -433,6 +474,7 @@ app.get("/api/stats", async (req, res) => {
 
       details:
         error.message
+
     });
   }
 });
