@@ -945,6 +945,21 @@
       `${data.winRate}%`;
 
 
+    document.getElementById(
+  "kd"
+).textContent =
+  data.games > 0
+    ? data.kd.toFixed(2)
+    : "—";
+
+document.getElementById(
+  "averageRating"
+).textContent =
+  data.averageRating !== null
+    ? data.averageRating.toFixed(2)
+    : "—";
+
+
     /* DETAILS */
 
 
