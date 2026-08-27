@@ -1,321 +1,1435 @@
-```html
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="pt-PT">
 
-  <title>FACEIT 50 Wins</title>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>WISDE — FACEIT Challenge</title>
 
   <style>
+
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0f1115;
+
+      font-family:
+        Inter,
+        Arial,
+        sans-serif;
+
+      background:
+        radial-gradient(
+          circle at top,
+          #202638 0%,
+          #0b0d12 45%,
+          #07080b 100%
+        );
+
       color: #ffffff;
+
       min-height: 100vh;
+
       display: flex;
+
       justify-content: center;
-      align-items: center;
+
+      padding: 30px 16px;
+
     }
 
     .container {
+
       width: 100%;
-      max-width: 900px;
-      padding: 30px 20px;
+
+      max-width: 950px;
+
     }
 
-    .card {
-      background: #181b21;
-      border-radius: 18px;
-      padding: 35px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
-    }
+    /* HEADER */
 
     .header {
+
       text-align: center;
-      margin-bottom: 30px;
+
+      margin-bottom: 25px;
+
     }
 
-    .header h1 {
-      margin: 0;
-      font-size: 42px;
+    .eyebrow {
+
+      color: #9aa4b2;
+
+      font-size: 13px;
+
+      letter-spacing: 3px;
+
+      text-transform: uppercase;
+
+      margin-bottom: 8px;
+
+    }
+
+    h1 {
+
+      font-size:
+        clamp(30px, 6vw, 52px);
+
       font-weight: 800;
+
+      letter-spacing: -2px;
+
     }
 
-    .header p {
+    .subtitle {
+
+      color: #aeb6c2;
+
       margin-top: 8px;
-      color: #8e96a3;
-      font-size: 16px;
-    }
 
-    .progress-container {
-      margin: 30px 0;
-    }
-
-    .progress-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
       font-size: 15px;
-      color: #aab1bd;
+
+    }
+
+    /* MAIN CARD */
+
+    .main-card {
+
+      background:
+        rgba(20, 23, 31, 0.92);
+
+      border:
+        1px solid
+        rgba(255,255,255,0.08);
+
+      border-radius: 24px;
+
+      padding: 35px;
+
+      box-shadow:
+        0 25px 80px
+        rgba(0,0,0,0.4);
+
+      margin-bottom: 18px;
+
+    }
+
+    /* PROGRESS */
+
+    .progress-section {
+
+      text-align: center;
+
+    }
+
+    .progress-number {
+
+      font-size:
+        clamp(58px, 12vw, 100px);
+
+      font-weight: 900;
+
+      line-height: 1;
+
+    }
+
+    .progress-number span {
+
+      color: #737b88;
+
+      font-size: 0.45em;
+
     }
 
     .progress-bar {
+
       width: 100%;
+
       height: 18px;
-      background: #292e36;
-      border-radius: 10px;
+
+      background: #292e38;
+
+      border-radius: 999px;
+
       overflow: hidden;
+
+      margin: 25px 0 12px;
+
     }
 
-    .progress {
+    .progress-fill {
+
       height: 100%;
+
       width: 0%;
-      background: #ff5500;
-      border-radius: 10px;
-      transition: width 0.5s ease;
+
+      border-radius: inherit;
+
+      background:
+        linear-gradient(
+          90deg,
+          #36d399,
+          #62f5b0
+        );
+
+      transition:
+        width 0.5s ease;
+
     }
 
-    .main-stats {
+    .progress-percent {
+
+      color: #8f99a7;
+
+      font-size: 14px;
+
+    }
+
+    .remaining {
+
+      margin-top: 20px;
+
+      font-size: 17px;
+
+      color: #d8dde5;
+
+    }
+
+    .remaining strong {
+
+      color: white;
+
+    }
+
+    /* GOAL */
+
+    .goal-selector {
+
+      margin:
+        30px auto 5px;
+
+      max-width: 600px;
+
+      text-align: center;
+
+      padding: 20px;
+
+      background: #181c24;
+
+      border-radius: 16px;
+
+      border:
+        1px solid
+        rgba(255,255,255,0.06);
+
+    }
+
+    .goal-title {
+
+      color: #8d96a4;
+
+      font-size: 11px;
+
+      letter-spacing: 2px;
+
+      text-transform: uppercase;
+
+      margin-bottom: 8px;
+
+    }
+
+    .goal-value {
+
+      font-size: 28px;
+
+      font-weight: 800;
+
+      margin-bottom: 14px;
+
+    }
+
+    .goal-value span {
+
+      color: #36d399;
+
+    }
+
+    .goal-slider {
+
+      width: 100%;
+
+      cursor: pointer;
+
+      accent-color: #36d399;
+
+    }
+
+    .slider-labels {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      color: #68717f;
+
+      font-size: 11px;
+
+      margin-top: 5px;
+
+    }
+
+    /* STATUS */
+
+    .pace-status {
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 9px;
+
+      margin-top: 22px;
+
+      font-size: 15px;
+
+      font-weight: 700;
+
+    }
+
+    .status-dot {
+
+      width: 10px;
+
+      height: 10px;
+
+      border-radius: 50%;
+
+    }
+
+    .status-green {
+
+      background: #36d399;
+
+      box-shadow:
+        0 0 12px #36d399;
+
+    }
+
+    .status-yellow {
+
+      background: #f5c542;
+
+      box-shadow:
+        0 0 12px #f5c542;
+
+    }
+
+    .status-red {
+
+      background: #ff6464;
+
+      box-shadow:
+        0 0 12px #ff6464;
+
+    }
+
+    /* STATS */
+
+    .stats {
+
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
-      margin-top: 30px;
+
+      grid-template-columns:
+        repeat(5, 1fr);
+
+      gap: 12px;
+
+      margin-top: 25px;
+
     }
 
     .stat {
-      background: #20242b;
-      border-radius: 14px;
-      padding: 22px 15px;
-      text-align: center;
-    }
 
-    .stat .value {
-      font-size: 30px;
-      font-weight: 800;
-      margin-bottom: 7px;
-    }
+      background: #181c24;
 
-    .stat .label {
-      color: #8e96a3;
-      font-size: 14px;
-    }
+      border:
+        1px solid
+        rgba(255,255,255,0.06);
 
-    .secondary-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      margin-top: 15px;
-    }
+      border-radius: 16px;
 
-    .secondary-stat {
-      background: #20242b;
-      border-radius: 14px;
       padding: 20px 10px;
+
       text-align: center;
+
     }
 
-    .secondary-stat .value {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 6px;
+    .stat-value {
+
+      font-size: 27px;
+
+      font-weight: 800;
+
     }
 
-    .secondary-stat .label {
-      color: #8e96a3;
-      font-size: 13px;
+    .stat-label {
+
+      color: #8d96a4;
+
+      font-size: 12px;
+
+      margin-top: 6px;
+
+      text-transform: uppercase;
+
+      letter-spacing: 0.7px;
+
+    }
+
+    /* DETAILS */
+
+    .details {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      gap: 12px;
+
+      margin-top: 12px;
+
+    }
+
+    .detail {
+
+      background: #181c24;
+
+      border-radius: 16px;
+
+      padding: 18px;
+
+      text-align: center;
+
+      border:
+        1px solid
+        rgba(255,255,255,0.06);
+
+    }
+
+    .detail-value {
+
+      font-size: 23px;
+
+      font-weight: 800;
+
+    }
+
+    .detail-label {
+
+      color: #8d96a4;
+
+      font-size: 12px;
+
+      margin-top: 5px;
+
+    }
+
+    /* ELO */
+
+    .elo-section {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, 1fr);
+
+      gap: 12px;
+
+      margin-top: 12px;
+
+    }
+
+    .elo-card {
+
+      background: #181c24;
+
+      border-radius: 16px;
+
+      padding: 20px;
+
+      text-align: center;
+
+      border:
+        1px solid
+        rgba(255,255,255,0.06);
+
+    }
+
+    .elo-value {
+
+      font-size: 27px;
+
+      font-weight: 800;
+
+    }
+
+    .elo-label {
+
+      color: #8d96a4;
+
+      font-size: 12px;
+
+      margin-top: 6px;
+
+      text-transform: uppercase;
+
+      letter-spacing: 0.7px;
+
+    }
+
+    /* FOOTER */
+
+    .footer {
+
+      text-align: center;
+
+      color: #68717f;
+
+      font-size: 12px;
+
+      margin-top: 18px;
+
     }
 
     .status {
-      text-align: center;
-      margin-top: 28px;
-      color: #8e96a3;
-      font-size: 14px;
+
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 7px;
+
+      margin-top: 10px;
+
+      color: #7f8998;
+
+    }
+
+    .dot {
+
+      width: 7px;
+
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #36d399;
+
+      box-shadow:
+        0 0 10px #36d399;
+
     }
 
     .error {
+
       text-align: center;
-      color: #ff5c5c;
-      margin-top: 20px;
+
+      color: #ff7b7b;
+
+      padding: 30px;
+
       display: none;
+
     }
+
+    /* MOBILE */
 
     @media (max-width: 700px) {
-      .card {
-        padding: 25px 18px;
+
+      .main-card {
+
+        padding: 24px 18px;
+
       }
 
-      .header h1 {
-        font-size: 32px;
+      .stats {
+
+        grid-template-columns:
+          repeat(2, 1fr);
+
       }
 
-      .main-stats {
-        grid-template-columns: 1fr;
+      .details {
+
+        grid-template-columns:
+          1fr;
+
       }
 
-      .secondary-stats {
-        grid-template-columns: repeat(2, 1fr);
+      .elo-section {
+
+        grid-template-columns:
+          1fr;
+
       }
+
     }
+
   </style>
+
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <div class="card">
+  <!-- HEADER -->
 
-      <div class="header">
-        <h1>wins</h1>
-        <p id="month">Loading...</p>
-      </div>
+  <div class="header">
 
-      <div class="progress-container">
+    <div class="eyebrow">
+      FACEIT Challenge
+    </div>
 
-        <div class="progress-info">
-          <span id="progressText">0 / 50 wins</span>
-          <span id="progressPercent">0%</span>
-        </div>
+    <h1>
+      WINS
+    </h1>
 
-        <div class="progress-bar">
-          <div class="progress" id="progressBar"></div>
-        </div>
+    <div class="subtitle">
 
-      </div>
+      <span id="nickname">
+        WISDE
+      </span>
 
-      <div class="main-stats">
+      ·
 
-        <div class="stat">
-          <div class="value" id="wins">0</div>
-          <div class="label">Wins</div>
-        </div>
-
-        <div class="stat">
-          <div class="value" id="losses">0</div>
-          <div class="label">Losses</div>
-        </div>
-
-        <div class="stat">
-          <div class="value" id="kd">0.00</div>
-          <div class="label">K/D</div>
-        </div>
-
-      </div>
-
-      <div class="secondary-stats">
-
-        <div class="secondary-stat">
-          <div class="value" id="games">0</div>
-          <div class="label">Games</div>
-        </div>
-
-        <div class="secondary-stat">
-          <div class="value" id="winRate">0%</div>
-          <div class="label">Win Rate</div>
-        </div>
-
-        <div class="secondary-stat">
-          <div class="value" id="averagePerDay">0.00</div>
-          <div class="label">Wins / Day</div>
-        </div>
-
-        <div class="secondary-stat">
-          <div class="value" id="requiredPerDay">0.00</div>
-          <div class="label">Required / Day</div>
-        </div>
-
-      </div>
-
-      <div class="status" id="status">
-        Loading FACEIT data...
-      </div>
-
-      <div class="error" id="error"></div>
+      <span id="month">
+        A carregar...
+      </span>
 
     </div>
 
   </div>
 
-  <script>
 
-    async function loadStats() {
+  <!-- MAIN -->
 
-      try {
+  <div class="main-card">
 
-        const response = await fetch("/api/stats");
 
-        const data = await response.json();
+    <!-- PROGRESS -->
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to load stats.");
-        }
+    <div class="progress-section">
 
-        document.getElementById("month").textContent =
-          `${data.month} ${data.year}`;
+      <div class="progress-number">
 
-        document.getElementById("wins").textContent =
-          data.wins;
+        <span id="wins">
+          —
+        </span>
 
-        document.getElementById("losses").textContent =
-          data.losses;
+        <span>
+          /
+          <span id="goalDisplay">
+            50
+          </span>
+        </span>
 
-        document.getElementById("games").textContent =
-          data.games;
+      </div>
 
-        document.getElementById("kd").textContent =
-          Number(data.kd).toFixed(2);
 
-        document.getElementById("winRate").textContent =
-          `${Number(data.winRate).toFixed(1)}%`;
+      <div class="progress-bar">
 
-        document.getElementById("averagePerDay").textContent =
-          Number(data.averagePerDay).toFixed(2);
+        <div
+          class="progress-fill"
+          id="progress">
+        </div>
 
-        document.getElementById("requiredPerDay").textContent =
-          Number(data.requiredPerDay).toFixed(2);
+      </div>
 
-        document.getElementById("progressText").textContent =
-          `${data.wins} / ${data.goal} wins`;
 
-        document.getElementById("progressPercent").textContent =
-          `${Number(data.progress).toFixed(1)}%`;
+      <div
+        class="progress-percent"
+        id="progressText">
 
-        document.getElementById("progressBar").style.width =
-          `${Math.min(data.progress, 100)}%`;
+        A carregar...
 
-        document.getElementById("status").textContent =
-          `${data.winsRemaining} wins remaining • ${data.daysRemaining} days remaining`;
+      </div>
 
-        document.getElementById("error").style.display = "none";
 
-      } catch (error) {
+      <div class="remaining">
 
-        console.error(error);
+        <strong id="remaining">
+          —
+        </strong>
 
-        document.getElementById("status").style.display = "none";
+        vitórias restantes
 
-        const errorElement = document.getElementById("error");
+      </div>
 
-        errorElement.textContent =
-          error.message || "Error loading FACEIT data.";
+    </div>
 
-        errorElement.style.display = "block";
+
+    <!-- GOAL -->
+
+    <div class="goal-selector">
+
+      <div class="goal-title">
+        Objetivo mensal
+      </div>
+
+
+      <div class="goal-value">
+
+        <span id="goalValue">
+          50
+        </span>
+
+        WINS
+
+      </div>
+
+
+      <input
+        id="goalSlider"
+        class="goal-slider"
+        type="range"
+        min="1"
+        max="150"
+        value="50"
+      >
+
+
+      <div class="slider-labels">
+
+        <span>
+          1
+        </span>
+
+        <span>
+          75
+        </span>
+
+        <span>
+          150
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div class="pace-status">
+
+      <span
+        id="statusDot"
+        class="status-dot status-green">
+      </span>
+
+      <span id="paceStatus">
+        A calcular ritmo...
+      </span>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="games">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Jogos
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winsStat">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Vitórias
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="losses">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Derrotas
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="winRate">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          Win Rate
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-value"
+          id="kd">
+
+          —
+
+        </div>
+
+        <div class="stat-label">
+          K/D
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- DETAILS -->
+
+    <div class="details">
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="average">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Ritmo atual
+        </div>
+
+      </div>
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="required">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Ritmo necessário
+        </div>
+
+      </div>
+
+
+      <div class="detail">
+
+        <div
+          class="detail-value"
+          id="days">
+
+          —
+
+        </div>
+
+        <div class="detail-label">
+          Dias restantes
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- ELO -->
+
+    <div class="elo-section">
+
+
+      <div class="elo-card">
+
+        <div
+          class="elo-value"
+          id="eloToday">
+
+          —
+
+        </div>
+
+        <div class="elo-label">
+          Elo Hoje
+        </div>
+
+      </div>
+
+
+      <div class="elo-card">
+
+        <div
+          class="elo-value"
+          id="eloMonth">
+
+          —
+
+        </div>
+
+        <div class="elo-label">
+          Elo no Mês
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- FOOTER -->
+
+    <div class="footer">
+
+      <div class="status">
+
+        <span class="dot"></span>
+
+        <span id="updated">
+          A atualizar...
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="error"
+      id="error">
+
+      Não foi possível obter os dados da FACEIT.
+
+    </div>
+
+
+  </div>
+
+</div>
+
+
+<script>
+
+
+  /* ==========================
+     OBJECTIVO
+  ========================== */
+
+
+  let selectedGoal =
+    Number(
+      localStorage.getItem(
+        "faceitGoal"
+      )
+    ) || 50;
+
+
+  const slider =
+    document.getElementById(
+      "goalSlider"
+    );
+
+
+  const goalValue =
+    document.getElementById(
+      "goalValue"
+    );
+
+
+  slider.value =
+    selectedGoal;
+
+
+  goalValue.textContent =
+    selectedGoal;
+
+
+  slider.addEventListener(
+    "input",
+    function () {
+
+      selectedGoal =
+        Number(
+          this.value
+        );
+
+
+      goalValue.textContent =
+        selectedGoal;
+
+
+      document.getElementById(
+        "goalDisplay"
+      ).textContent =
+        selectedGoal;
+
+
+      localStorage.setItem(
+        "faceitGoal",
+        selectedGoal
+      );
+
+
+      if (window.latestData) {
+
+        updatePanel(
+          window.latestData
+        );
+
       }
+
+    }
+  );
+
+
+  /* ==========================
+     ACTUALIZAR PAINEL
+  ========================== */
+
+
+  function updatePanel(data) {
+
+
+    const goal =
+      selectedGoal;
+
+
+    const wins =
+      data.wins;
+
+
+    const winsRemaining =
+      Math.max(
+        goal - wins,
+        0
+      );
+
+
+    const progress =
+      Math.min(
+        (wins / goal) * 100,
+        100
+      );
+
+
+    const daysRemaining =
+      data.daysRemaining;
+
+
+    const averagePerDay =
+      data.averagePerDay;
+
+
+    const requiredPerDay =
+      daysRemaining > 0
+        ? winsRemaining /
+          daysRemaining
+        : winsRemaining;
+
+
+    /* HEADER */
+
+
+    document.getElementById(
+      "nickname"
+    ).textContent =
+      data.nickname.toUpperCase();
+
+
+    document.getElementById(
+      "month"
+    ).textContent =
+      `${data.month} ${data.year}`;
+
+
+    /* PROGRESS */
+
+
+    document.getElementById(
+      "goalValue"
+    ).textContent =
+      goal;
+
+
+    document.getElementById(
+      "goalDisplay"
+    ).textContent =
+      goal;
+
+
+    document.getElementById(
+      "wins"
+    ).textContent =
+      wins;
+
+
+    document.getElementById(
+      "remaining"
+    ).textContent =
+      winsRemaining;
+
+
+    document.getElementById(
+      "progress"
+    ).style.width =
+      `${progress}%`;
+
+
+    document.getElementById(
+      "progressText"
+    ).textContent =
+      `${progress.toFixed(1)}% concluído`;
+
+
+    /* STATS */
+
+
+    document.getElementById(
+      "games"
+    ).textContent =
+      data.games;
+
+
+    document.getElementById(
+      "winsStat"
+    ).textContent =
+      wins;
+
+
+    document.getElementById(
+      "losses"
+    ).textContent =
+      data.losses;
+
+
+    document.getElementById(
+      "winRate"
+    ).textContent =
+      `${data.winRate}%`;
+
+
+    document.getElementById(
+      "kd"
+    ).textContent =
+      data.kd !== undefined
+        ? Number(data.kd).toFixed(2)
+        : "—";
+
+
+    /* DETAILS */
+
+
+    document.getElementById(
+      "average"
+    ).textContent =
+      Number(
+        averagePerDay
+      ).toFixed(2);
+
+
+    document.getElementById(
+      "required"
+    ).textContent =
+      requiredPerDay.toFixed(2);
+
+
+    document.getElementById(
+      "days"
+    ).textContent =
+      daysRemaining;
+
+
+    /* ELO */
+
+
+    const eloToday =
+      Number(
+        data.eloToday || 0
+      );
+
+
+    const eloMonth =
+      Number(
+        data.eloMonth || 0
+      );
+
+
+    const eloTodayElement =
+      document.getElementById(
+        "eloToday"
+      );
+
+
+    const eloMonthElement =
+      document.getElementById(
+        "eloMonth"
+      );
+
+
+    eloTodayElement.textContent =
+      eloToday > 0
+        ? `+${eloToday}`
+        : eloToday;
+
+
+    eloMonthElement.textContent =
+      eloMonth > 0
+        ? `+${eloMonth}`
+        : eloMonth;
+
+
+    /* STATUS */
+
+
+    const status =
+      document.getElementById(
+        "paceStatus"
+      );
+
+
+    const statusDot =
+      document.getElementById(
+        "statusDot"
+      );
+
+
+    const now =
+      new Date();
+
+
+    const dayOfMonth =
+      now.getDate();
+
+
+    const daysInMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0
+      ).getDate();
+
+
+    const expectedWins =
+      goal *
+      (
+        dayOfMonth /
+        daysInMonth
+      );
+
+
+    if (
+      wins >=
+      expectedWins + 1
+    ) {
+
+      status.textContent =
+        "À frente do ritmo";
+
+
+      statusDot.className =
+        "status-dot status-green";
+
     }
 
-    loadStats();
+    else if (
+      wins >=
+      expectedWins - 1
+    ) {
 
-    // Refresh automatically every 60 seconds
-    setInterval(loadStats, 60000);
+      status.textContent =
+        "No ritmo";
 
-  </script>
+
+      statusDot.className =
+        "status-dot status-yellow";
+
+    }
+
+    else {
+
+      status.textContent =
+        "Atrasado";
+
+
+      statusDot.className =
+        "status-dot status-red";
+
+    }
+
+
+    /* UPDATE TIME */
+
+
+    const updated =
+      new Date(
+        data.updatedAt
+      );
+
+
+    document.getElementById(
+      "updated"
+    ).textContent =
+      `Atualizado às ${
+        updated.toLocaleTimeString(
+          "pt-PT",
+          {
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        )
+      }`;
+
+
+    document.getElementById(
+      "error"
+    ).style.display =
+      "none";
+
+  }
+
+
+  /* ==========================
+     API
+  ========================== */
+
+
+  async function loadStats() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/stats"
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          "API error"
+        );
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      window.latestData =
+        data;
+
+
+      updatePanel(
+        data
+      );
+
+
+    }
+
+    catch (error) {
+
+      console.error(
+        error
+      );
+
+
+      document.getElementById(
+        "error"
+      ).style.display =
+        "block";
+
+    }
+
+  }
+
+
+  /* ==========================
+     START
+  ========================== */
+
+
+  loadStats();
+
+
+  /*
+    Atualiza automaticamente
+    a cada 5 minutos.
+  */
+
+
+  setInterval(
+    loadStats,
+    5 * 60 * 1000
+  );
+
+
+</script>
 
 </body>
+
 </html>
-```
