@@ -1,44 +1,12 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static("."));
 
-const ELO_FILE = path.join(__dirname, "elo-history.json");
-
-function loadEloHistory() {
-  try {
-    if (!fs.existsSync(ELO_FILE)) {
-      return {};
-    }
-
-    return JSON.parse(
-      fs.readFileSync(ELO_FILE, "utf8")
-    );
-  } catch (error) {
-    console.error("Erro ao ler elo-history.json:", error.message);
-    return {};
-  }
-}
-
-function saveEloHistory(data) {
-  try {
-    fs.writeFileSync(
-      ELO_FILE,
-      JSON.stringify(data, null, 2)
-    );
-  } catch (error) {
-    console.error("Erro ao guardar histórico de ELO:", error.message);
-  }
-}
-
 app.get("/api/stats", async (req, res) => {
-
   try {
-
     const apiKey = process.env.FACEIT_API_KEY;
 
     if (!apiKey) {
@@ -81,8 +49,9 @@ app.get("/api/stats", async (req, res) => {
     // ELO ATUAL
     // ==========================
 
-    const currentElo =
-      Number(player.games?.cs2?.faceit_elo);
+    const currentElo = Number(
+      player.games?.cs2?.faceit_elo
+    );
 
     // ==========================
     // DATAS
@@ -116,55 +85,43 @@ app.get("/api/stats", async (req, res) => {
       )
     );
 
-    const daysInMonth =
-      new Date(
-        Date.UTC(
-          year,
-          monthIndex + 1,
-          0
-        )
-      ).getUTCDate();
-
-    /*
-     * O próprio dia conta como dia restante.
-     *
-     * Exemplo:
-     * 27 de Agosto:
-     *
-     * 27,28,29,30,31 = 5 dias
-     */
-
-    const daysRemaining =
-      Math.max(
-        daysInMonth - today + 1,
+    const daysInMonth = new Date(
+      Date.UTC(
+        year,
+        monthIndex + 1,
         0
-      );
+      )
+    ).getUTCDate();
 
-    const from =
-      Math.floor(
-        startOfMonth.getTime() / 1000
-      );
+    // O próprio dia conta
+    //
+    // 27 de Agosto:
+    // 27, 28, 29, 30, 31 = 5 dias
 
-    const to =
-      Math.floor(
-        endOfMonth.getTime() / 1000
-      );
+    const daysRemaining = Math.max(
+      daysInMonth - today + 1,
+      0
+    );
 
-    const statsFrom =
-      startOfMonth.getTime();
+    const from = Math.floor(
+      startOfMonth.getTime() / 1000
+    );
 
-    const statsTo =
-      endOfMonth.getTime();
+    const to = Math.floor(
+      endOfMonth.getTime() / 1000
+    );
+
+    const statsFrom = startOfMonth.getTime();
+    const statsTo = endOfMonth.getTime();
 
     // ==========================
-    // HISTÓRICO
+    // HISTÓRICO DE PARTIDAS
     // ==========================
 
     let matches = [];
     let offset = 0;
 
     while (true) {
-
       const matchesResponse = await fetch(
         `https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&from=${from}&to=${to}&offset=${offset}&limit=100`,
         { headers }
@@ -203,11 +160,9 @@ app.get("/api/stats", async (req, res) => {
     // ==========================
 
     const uniqueMatches = [];
-
     const seenMatches = new Set();
 
     for (const match of matches) {
-
       if (!match.match_id) {
         continue;
       }
@@ -217,7 +172,6 @@ app.get("/api/stats", async (req, res) => {
       }
 
       seenMatches.add(match.match_id);
-
       uniqueMatches.push(match);
     }
 
@@ -231,23 +185,32 @@ app.get("/api/stats", async (req, res) => {
     let losses = 0;
 
     for (const match of matches) {
-
       if (match.status !== "finished") {
         continue;
       }
 
       let playerTeam = null;
 
+      // --------------------------------
+      // FORMATO NORMAL DO /history
+      // --------------------------------
+
       for (
         const [teamId, team]
         of Object.entries(match.teams || {})
       ) {
+        const players =
+          team.players ||
+          team.roster ||
+          [];
 
         const found =
-          (team.players || []).some(
-            p =>
-              p.player_id === playerId
-          );
+          players.some((p) => {
+            return (
+              p.player_id === playerId ||
+              p.id === playerId
+            );
+          });
 
         if (found) {
           playerTeam = teamId;
@@ -255,24 +218,125 @@ app.get("/api/stats", async (req, res) => {
         }
       }
 
+      // --------------------------------
+      // CASO NÃO TENHA ENCONTRADO
+      // TENTAR OBTER OS DETALHES DA PARTIDA
+      // --------------------------------
+
+      if (!playerTeam) {
+        try {
+          const detailResponse = await fetch(
+            `https://open.faceit.com/data/v4/matches/${match.match_id}`,
+            { headers }
+          );
+
+          if (detailResponse.ok) {
+            const detail =
+              await detailResponse.json();
+
+            for (
+              const [factionId, faction]
+              of Object.entries(
+                detail.teams || {}
+              )
+            ) {
+              const roster =
+                faction.roster ||
+                faction.players ||
+                [];
+
+              const found =
+                roster.some((p) => {
+                  return (
+                    p.id === playerId ||
+                    p.player_id === playerId
+                  );
+                });
+
+              if (found) {
+                playerTeam = factionId;
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.log(
+            `Erro ao obter detalhes da partida ${match.match_id}:`,
+            error.message
+          );
+        }
+      }
+
       if (!playerTeam) {
         continue;
       }
 
-      if (
-        match.results &&
-        match.results.winner === playerTeam
-      ) {
+      // --------------------------------
+      // RESULTADO
+      // --------------------------------
 
+      let winner = null;
+
+      if (match.results?.winner) {
+        winner = match.results.winner;
+      }
+
+      if (match.winner) {
+        winner = match.winner;
+      }
+
+      // Se não temos o resultado no histórico,
+      // vamos buscar aos detalhes da partida.
+
+      if (!winner) {
+        try {
+          const detailResponse = await fetch(
+            `https://open.faceit.com/data/v4/matches/${match.match_id}`,
+            { headers }
+          );
+
+          if (detailResponse.ok) {
+            const detail =
+              await detailResponse.json();
+
+            if (detail.results?.winner) {
+              winner =
+                detail.results.winner;
+            }
+
+            if (
+              !winner &&
+              detail.detailed_results?.length
+            ) {
+              const result =
+                detail.detailed_results[0];
+
+              if (result.winner) {
+                winner =
+                  result.winner;
+              }
+            }
+          }
+        } catch (error) {
+          console.log(
+            `Erro ao obter resultado ${match.match_id}:`,
+            error.message
+          );
+        }
+      }
+
+      if (!winner) {
+        continue;
+      }
+
+      // --------------------------------
+      // WIN / LOSS
+      // --------------------------------
+
+      if (winner === playerTeam) {
         wins++;
-
-      } else if (
-        match.results &&
-        match.results.winner
-      ) {
-
+      } else {
         losses++;
-
       }
     }
 
@@ -284,14 +348,12 @@ app.get("/api/stats", async (req, res) => {
     let totalDeaths = 0;
 
     try {
-
       const statsResponse = await fetch(
         `https://open.faceit.com/data/v4/players/${playerId}/games/cs2/stats?from=${statsFrom}&to=${statsTo}&limit=100`,
         { headers }
       );
 
       if (statsResponse.ok) {
-
         const statsData =
           await statsResponse.json();
 
@@ -299,7 +361,6 @@ app.get("/api/stats", async (req, res) => {
           statsData.items || [];
 
         for (const item of statMatches) {
-
           const stats =
             item.stats || {};
 
@@ -318,14 +379,11 @@ app.get("/api/stats", async (req, res) => {
           }
         }
       }
-
     } catch (error) {
-
       console.log(
         "Erro ao obter K/D:",
         error.message
       );
-
     }
 
     // ==========================
@@ -336,7 +394,6 @@ app.get("/api/stats", async (req, res) => {
     let ratingMatches = 0;
 
     for (const match of matches) {
-
       if (match.status !== "finished") {
         continue;
       }
@@ -346,7 +403,6 @@ app.get("/api/stats", async (req, res) => {
       }
 
       try {
-
         const matchResponse = await fetch(
           `https://open.faceit.com/data/v4/matches/${match.match_id}/stats`,
           { headers }
@@ -363,17 +419,14 @@ app.get("/api/stats", async (req, res) => {
           matchData.rounds || [];
 
         for (const round of rounds) {
-
           const teams =
             round.teams || [];
 
           for (const team of teams) {
-
             const players =
               team.players || [];
 
             for (const p of players) {
-
               if (
                 p.player_id !== playerId
               ) {
@@ -396,21 +449,17 @@ app.get("/api/stats", async (req, res) => {
                 const key
                 of possibleRatingKeys
               ) {
-
                 if (
                   stats[key] !== undefined
                 ) {
-
                   const rating =
                     Number(stats[key]);
 
                   if (
                     Number.isFinite(rating)
                   ) {
-
                     totalRating += rating;
                     ratingMatches++;
-
                     break;
                   }
                 }
@@ -418,14 +467,11 @@ app.get("/api/stats", async (req, res) => {
             }
           }
         }
-
       } catch (error) {
-
         console.log(
           `Erro na partida ${match.match_id}:`,
           error.message
         );
-
       }
     }
 
@@ -480,65 +526,23 @@ app.get("/api/stats", async (req, res) => {
       );
 
     // ==========================
-    // ELO HOJE / ELO MÊS
+    // ELO
     // ==========================
 
-    let eloToday = null;
-    let eloMonth = null;
+    /*
+     * A FACEIT API fornece diretamente
+     * o ELO ATUAL do jogador.
+     *
+     * Não vamos usar elo-history.json
+     * para inventar o ELO ganho no mês.
+     *
+     * O effectiveRanking existente nos detalhes
+     * da partida NÃO é o ELO ganho/perdido pelo
+     * jogador nessa partida.
+     */
 
-    if (
-      Number.isFinite(currentElo)
-    ) {
-
-      const eloHistory =
-        loadEloHistory();
-
-      const todayKey =
-        now.toISOString().slice(0, 10);
-
-      const monthKey =
-        `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-
-      /*
-       * Se ainda não existe referência para hoje,
-       * guardamos o ELO atual.
-       */
-
-      if (
-        !eloHistory[todayKey]
-      ) {
-
-        eloHistory[todayKey] = {
-          startElo: currentElo
-        };
-
-      }
-
-      /*
-       * Se ainda não existe referência para
-       * este mês, guardamos o ELO atual.
-       */
-
-      if (
-        !eloHistory[monthKey]
-      ) {
-
-        eloHistory[monthKey] = {
-          startElo: currentElo
-        };
-
-      }
-
-      saveEloHistory(eloHistory);
-
-      eloToday =
-        currentElo -
-        eloHistory[todayKey].startElo;
-
-      eloMonth =
-        currentElo -
-        eloHistory[monthKey].startElo;
-    }
+    const eloToday = null;
+    const eloMonth = null;
 
     // ==========================
     // NOME DO MÊS
@@ -558,7 +562,6 @@ app.get("/api/stats", async (req, res) => {
     // ==========================
 
     res.json({
-
       nickname:
         player.nickname,
 
@@ -621,7 +624,6 @@ app.get("/api/stats", async (req, res) => {
           : null,
 
       eloToday,
-
       eloMonth,
 
       updatedAt:
@@ -629,34 +631,26 @@ app.get("/api/stats", async (req, res) => {
 
       matchesFound:
         matches.length
-
     });
 
   } catch (error) {
-
     console.error(
       "ERRO /api/stats:",
       error
     );
 
     res.status(500).json({
-
       error:
         "Não foi possível obter os dados da FACEIT.",
 
       details:
         error.message
-
     });
-
   }
-
 });
 
 app.listen(PORT, () => {
-
   console.log(
     `Server running on port ${PORT}`
   );
-
 });
