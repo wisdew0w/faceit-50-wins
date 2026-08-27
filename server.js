@@ -1,3 +1,4 @@
+```javascript
 const express = require("express");
 
 const app = express();
@@ -7,6 +8,7 @@ app.use(express.static("."));
 
 app.get("/api/stats", async (req, res) => {
   try {
+
     const apiKey = process.env.FACEIT_API_KEY;
 
     if (!apiKey) {
@@ -15,322 +17,271 @@ app.get("/api/stats", async (req, res) => {
       });
     }
 
+    const nickname = "wisde";
+
     const headers = {
       Authorization: `Bearer ${apiKey}`,
       Accept: "application/json"
     };
 
-    const nickname = "wisde";
-
-    // ==========================
-    // ENCONTRAR JOGADOR
-    // ==========================
+    /*
+     * ---------------------------------------------------------
+     * 1. Get player information
+     * ---------------------------------------------------------
+     */
 
     const playerResponse = await fetch(
       `https://open.faceit.com/data/v4/players?nickname=${encodeURIComponent(nickname)}`,
-      { headers }
+      {
+        headers
+      }
     );
 
     if (!playerResponse.ok) {
       throw new Error(
-        `Erro ao procurar jogador: ${playerResponse.status}`
+        `FACEIT player API error: ${playerResponse.status}`
       );
     }
 
     const player = await playerResponse.json();
 
-    // ==========================
-    // DATAS DO MÊS
-    // ==========================
+    const playerId = player.player_id;
+
+    if (!playerId) {
+      throw new Error("Player ID não encontrado.");
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 2. Current month dates
+     * ---------------------------------------------------------
+     */
 
     const now = new Date();
 
+    const year = now.getUTCFullYear();
+    const monthIndex = now.getUTCMonth();
+    const currentDay = now.getUTCDate();
+
+    const daysInMonth =
+      new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+
+    /*
+     * IMPORTANT:
+     *
+     * The current day counts as one of the remaining days.
+     *
+     * Example:
+     * August 24 -> August has 31 days
+     * 24,25,26,27,28,29,30,31 = 8 days
+     *
+     * Therefore:
+     * daysRemaining = 31 - 24 + 1 = 8
+     */
+
+    const daysRemaining =
+      Math.max(daysInMonth - currentDay + 1, 0);
+
+    /*
+     * ---------------------------------------------------------
+     * 3. Start / end of current month
+     * ---------------------------------------------------------
+     */
+
     const startOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1,
-      0,
-      0,
-      0
+      Date.UTC(year, monthIndex, 1, 0, 0, 0)
     );
 
     const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1,
-      0,
-      0,
-      0
+      Date.UTC(year, monthIndex + 1, 1, 0, 0, 0)
     );
 
-    const from = Math.floor(
-      startOfMonth.getTime() / 1000
-    );
+    const fromTimestamp =
+      Math.floor(startOfMonth.getTime() / 1000);
 
-    const to = Math.floor(
-      endOfMonth.getTime() / 1000
-    );
+    const toTimestamp =
+      Math.floor(endOfMonth.getTime() / 1000);
 
-    const statsFrom =
-      startOfMonth.getTime();
+    /*
+     * ---------------------------------------------------------
+     * 4. Get player's match history
+     * ---------------------------------------------------------
+     */
 
-    const statsTo =
-      endOfMonth.getTime();
+    let allMatches = [];
+    let offset = 0;
 
-    // ==========================
-    // HISTÓRICO
-    // ==========================
+    const limit = 100;
 
-    const matchesResponse = await fetch(
-      `https://open.faceit.com/data/v4/players/${player.player_id}/history?game=cs2&from=${from}&to=${to}&limit=100`,
-      { headers }
-    );
+    while (true) {
 
-    if (!matchesResponse.ok) {
-      throw new Error(
-        `Erro ao obter histórico: ${matchesResponse.status}`
+      const historyResponse = await fetch(
+        `https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&from=${fromTimestamp}&to=${toTimestamp}&offset=${offset}&limit=${limit}`,
+        {
+          headers
+        }
       );
+
+      if (!historyResponse.ok) {
+        throw new Error(
+          `FACEIT history API error: ${historyResponse.status}`
+        );
+      }
+
+      const history = await historyResponse.json();
+
+      const matches = history.items || [];
+
+      allMatches.push(...matches);
+
+      if (
+        matches.length < limit ||
+        !history.start ||
+        allMatches.length >= history.total
+      ) {
+        break;
+      }
+
+      offset += limit;
     }
 
-    const matchesData =
-      await matchesResponse.json();
+    /*
+     * ---------------------------------------------------------
+     * 5. Remove duplicate matches
+     * ---------------------------------------------------------
+     */
 
-    const matches =
-      matchesData.items || [];
+    const uniqueMatches = [];
 
-    // ==========================
-    // VITÓRIAS / DERROTAS
-    // ==========================
+    const seenMatches = new Set();
+
+    for (const match of allMatches) {
+
+      const matchId = match.match_id;
+
+      if (!matchId) {
+        continue;
+      }
+
+      if (seenMatches.has(matchId)) {
+        continue;
+      }
+
+      seenMatches.add(matchId);
+
+      uniqueMatches.push(match);
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 6. Get result + kills/deaths for every match
+     * ---------------------------------------------------------
+     */
 
     let wins = 0;
     let losses = 0;
 
-    for (const match of matches) {
-
-      if (match.status !== "finished") {
-        continue;
-      }
-
-      let playerTeam = null;
-
-      for (const [teamId, team] of Object.entries(
-        match.teams || {}
-      )) {
-
-        const found =
-          (team.players || []).some(
-            p =>
-              p.player_id === player.player_id
-          );
-
-        if (found) {
-          playerTeam = teamId;
-          break;
-        }
-      }
-
-      if (!playerTeam) {
-        continue;
-      }
-
-      if (
-        match.results &&
-        match.results.winner === playerTeam
-      ) {
-        wins++;
-      }
-
-      else if (
-        match.results &&
-        match.results.winner
-      ) {
-        losses++;
-      }
-    }
-
-    // ==========================
-    // K/D
-    // ==========================
-
     let totalKills = 0;
     let totalDeaths = 0;
 
-    try {
+    for (const match of uniqueMatches) {
 
-      const statsResponse = await fetch(
-        `https://open.faceit.com/data/v4/players/${player.player_id}/games/cs2/stats?from=${statsFrom}&to=${statsTo}&limit=100`,
-        { headers }
-      );
-
-      if (statsResponse.ok) {
-
-        const statsData =
-          await statsResponse.json();
-
-        const statMatches =
-          statsData.items || [];
-
-        for (const item of statMatches) {
-
-          const stats =
-            item.stats || {};
-
-          const kills =
-            Number(
-              stats["Kills"]
-            );
-
-          const deaths =
-            Number(
-              stats["Deaths"]
-            );
-
-          if (Number.isFinite(kills)) {
-            totalKills += kills;
-          }
-
-          if (Number.isFinite(deaths)) {
-            totalDeaths += deaths;
-          }
-        }
-      }
-
-    } catch (error) {
-
-      console.log(
-        "Erro ao obter K/D:",
-        error.message
-      );
-
-    }
-
-    // ==========================
-    // FACEIT RATING
-    // ==========================
-
-    let totalRating = 0;
-    let ratingMatches = 0;
-
-    /*
-      A API que estamos a utilizar para as
-      estatísticas individuais não devolve
-      diretamente o campo "Rating".
-
-      Por isso tentamos obter o rating
-      diretamente da informação da partida.
-    */
-
-    for (const match of matches) {
-
-      if (match.status !== "finished") {
-        continue;
-      }
-
-      if (!match.match_id) {
-        continue;
-      }
+      const matchId = match.match_id;
 
       try {
 
-        const matchResponse = await fetch(
-          `https://open.faceit.com/data/v4/matches/${match.match_id}/stats`,
-          { headers }
+        const statsResponse = await fetch(
+          `https://open.faceit.com/data/v4/matches/${matchId}/stats`,
+          {
+            headers
+          }
         );
 
-        if (!matchResponse.ok) {
+        if (!statsResponse.ok) {
           continue;
         }
 
-        const matchData =
-          await matchResponse.json();
+        const matchStats = await statsResponse.json();
 
-        const rounds =
-          matchData.rounds || [];
+        const rounds = matchStats.rounds || [];
+
+        let playerFound = false;
 
         for (const round of rounds) {
 
-          const teams =
-            round.teams || [];
+          const teams = round.teams || [];
 
           for (const team of teams) {
 
-            const players =
-              team.players || [];
+            const players = team.players || [];
 
             for (const p of players) {
 
-              if (
-                p.player_id !==
-                player.player_id
-              ) {
+              if (p.player_id !== playerId) {
                 continue;
               }
 
-              const stats =
-                p.player_stats || {};
+              playerFound = true;
 
               /*
-                Procurar várias versões possíveis
-                do campo de rating.
-              */
+               * Result
+               */
 
-              const possibleRatingKeys = [
-                "Rating",
-                "rating",
-                "Faceit Rating",
-                "FACEIT Rating",
-                "Faceit Rating 2.0",
-                "Rating 2.0"
-              ];
+              const teamStats = team.team_stats || {};
 
-              for (
-                const key of possibleRatingKeys
-              ) {
+              const winner = teamStats["Winner"];
 
-                if (
-                  stats[key] !== undefined
-                ) {
-
-                  const rating =
-                    Number(stats[key]);
-
-                  if (
-                    Number.isFinite(rating)
-                  ) {
-
-                    totalRating += rating;
-
-                    ratingMatches++;
-
-                    break;
-                  }
-                }
+              if (winner === "1") {
+                wins++;
+              } else if (winner === "0") {
+                losses++;
               }
+
+              /*
+               * Kills / deaths
+               */
+
+              const stats = p.player_stats || {};
+
+              const kills =
+                Number(stats.Kills || 0);
+
+              const deaths =
+                Number(stats.Deaths || 0);
+
+              totalKills += kills;
+              totalDeaths += deaths;
+
             }
           }
         }
 
+        /*
+         * If the match stats did not contain the player,
+         * don't count it.
+         */
+
+        if (!playerFound) {
+          continue;
+        }
+
       } catch (error) {
 
-        console.log(
-          `Erro na partida ${match.match_id}:`,
+        console.error(
+          `Error processing match ${matchId}:`,
           error.message
         );
 
       }
     }
 
-    const averageRating =
-      ratingMatches > 0
-        ? totalRating / ratingMatches
-        : null;
+    /*
+     * ---------------------------------------------------------
+     * 7. Calculate statistics
+     * ---------------------------------------------------------
+     */
 
-    // ==========================
-    // CÁLCULOS
-    // ==========================
-
-    const games =
-      wins + losses;
+    const games = wins + losses;
 
     const winRate =
       games > 0
@@ -340,40 +291,33 @@ app.get("/api/stats", async (req, res) => {
     const kd =
       totalDeaths > 0
         ? totalKills / totalDeaths
-        : 0;
+        : totalKills;
 
-    // ==========================
-    // OBJETIVO
-    // ==========================
+    /*
+     * Average wins per day:
+     *
+     * IMPORTANT:
+     * The current day is included.
+     *
+     * Example:
+     * 5 wins on August 24
+     *
+     * average = 5 / 24
+     */
+
+    const averagePerDay =
+      currentDay > 0
+        ? wins / currentDay
+        : 0;
 
     const goal = 50;
 
-    const today =
-      now.getDate();
-
-    const daysInMonth =
-      new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0
-      ).getDate();
-
-    const daysRemaining =
-      Math.max(
-        daysInMonth - today + 1,
-        0
-      );
-
     const winsRemaining =
-      Math.max(
-        goal - wins,
-        0
-      );
+      Math.max(goal - wins, 0);
 
-    const averagePerDay =
-      today > 0
-        ? wins / today
-        : 0;
+    /*
+     * Required wins per remaining day.
+     */
 
     const requiredPerDay =
       daysRemaining > 0
@@ -381,30 +325,34 @@ app.get("/api/stats", async (req, res) => {
         : winsRemaining;
 
     const progress =
-      Math.min(
-        (wins / goal) * 100,
-        100
-      );
+      (wins / goal) * 100;
 
-    // ==========================
-    // RESPOSTA
-    // ==========================
+    /*
+     * ---------------------------------------------------------
+     * 8. Month name
+     * ---------------------------------------------------------
+     */
+
+    const monthName = new Intl.DateTimeFormat(
+      "en-US",
+      {
+        month: "long",
+        timeZone: "UTC"
+      }
+    ).format(now);
+
+    /*
+     * ---------------------------------------------------------
+     * 9. Send response
+     * ---------------------------------------------------------
+     */
 
     res.json({
 
-      nickname:
-        player.nickname,
+      nickname,
 
-      month:
-        now.toLocaleString(
-          "en-US",
-          {
-            month: "long"
-          }
-        ),
-
-      year:
-        now.getFullYear(),
+      month: monthName,
+      year,
 
       goal,
 
@@ -414,75 +362,38 @@ app.get("/api/stats", async (req, res) => {
 
       winsRemaining,
 
-      winRate:
-        Number(
-          winRate.toFixed(1)
-        ),
+      winRate,
 
-      kd:
-        Number(
-          kd.toFixed(2)
-        ),
-
-      averageRating:
-        averageRating !== null
-          ? Number(
-              averageRating.toFixed(2)
-            )
-          : null,
+      kd,
 
       totalKills,
       totalDeaths,
 
-      ratingMatches,
+      averagePerDay,
 
-      averagePerDay:
-        Number(
-          averagePerDay.toFixed(2)
-        ),
-
-      requiredPerDay:
-        Number(
-          requiredPerDay.toFixed(2)
-        ),
+      requiredPerDay,
 
       daysRemaining,
 
-      progress:
-        Number(
-          progress.toFixed(1)
-        ),
+      progress,
 
-      updatedAt:
-        new Date().toISOString(),
+      updatedAt: now.toISOString()
 
-      matchesFound:
-        matches.length
     });
 
   } catch (error) {
 
-    console.error(
-      "ERRO /api/stats:",
-      error
-    );
+    console.error(error);
 
     res.status(500).json({
-
-      error:
-        "Não foi possível obter os dados da FACEIT.",
-
-      details:
-        error.message
-
+      error: error.message || "Erro ao obter dados da FACEIT."
     });
+
   }
 });
 
+
 app.listen(PORT, () => {
-
-  console.log(
-    `Server running on port ${PORT}`
-  );
-
+  console.log(`Server running on port ${PORT}`);
 });
+```
