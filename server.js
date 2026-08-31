@@ -120,7 +120,7 @@ app.get("/api/stats", async (req, res) => {
 
 
     const headers = {
-      Authorization: `Bearer ${apiKey}`,
+      "Authorization": "Bearer " + apiKey,
       Accept: "application/json"
     };
 
