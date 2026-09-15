@@ -1,3 +1,4 @@
+```javascript
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -7,24 +8,43 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("."));
 
-const ELO_FILE = path.join(__dirname, "elo-history.json");
-
 const FACEIT_API = "https://open.faceit.com/data/v4";
+
 const NICKNAME = "wisde";
 const GAME = "cs2";
 
+const ELO_FILE = path.join(__dirname, "elo-history.json");
 
 // ============================================================
-// ELO HISTORY
+// CACHE
+// ============================================================
+
+let playerCache = null;
+let playerCacheTime = 0;
+
+let statsCache = null;
+let statsCacheTime = 0;
+
+const PLAYER_CACHE_TIME = 5 * 60 * 1000;
+const STATS_CACHE_TIME = 60 * 1000;
+
+
+// ============================================================
+// EMPTY ELO HISTORY
 // ============================================================
 
 function emptyEloHistory() {
   return {
     days: {},
-    months: {}
+    months: {},
+    matches: {}
   };
 }
 
+
+// ============================================================
+// LOAD ELO HISTORY
+// ============================================================
 
 function loadEloHistory() {
   try {
@@ -52,6 +72,10 @@ function loadEloHistory() {
       data.months = {};
     }
 
+    if (!data.matches || typeof data.matches !== "object") {
+      data.matches = {};
+    }
+
     return data;
 
   } catch (error) {
@@ -60,6 +84,10 @@ function loadEloHistory() {
   }
 }
 
+
+// ============================================================
+// SAVE ELO HISTORY
+// ============================================================
 
 function saveEloHistory(history) {
   try {
@@ -81,7 +109,7 @@ function saveEloHistory(history) {
 // PORTUGAL DATE
 // ============================================================
 
-function getPortugalDateParts() {
+function getPortugalDateParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Lisbon",
     year: "numeric",
@@ -89,7 +117,7 @@ function getPortugalDateParts() {
     day: "2-digit"
   });
 
-  const parts = formatter.formatToParts(new Date());
+  const parts = formatter.formatToParts(date);
 
   const result = {};
 
@@ -107,19 +135,24 @@ function getPortugalDateParts() {
 }
 
 
-function getPortugalDateString() {
-  const date = getPortugalDateParts();
+function getPortugalDateString(date = new Date()) {
+  const d = getPortugalDateParts(date);
 
-  return `${date.year}-${String(date.month).padStart(2, "0")}-${String(
-    date.day
-  ).padStart(2, "0")}`;
+  return (
+    `${d.year}-` +
+    `${String(d.month).padStart(2, "0")}-` +
+    `${String(d.day).padStart(2, "0")}`
+  );
 }
 
 
-function getPortugalMonthString() {
-  const date = getPortugalDateParts();
+function getPortugalMonthString(date = new Date()) {
+  const d = getPortugalDateParts(date);
 
-  return `${date.year}-${String(date.month).padStart(2, "0")}`;
+  return (
+    `${d.year}-` +
+    `${String(d.month).padStart(2, "0")}`
+  );
 }
 
 
@@ -205,14 +238,8 @@ async function faceitFetch(url, label) {
 
 
 // ============================================================
-// PLAYER CACHE
+// PLAYER
 // ============================================================
-
-let playerCache = null;
-let playerCacheTime = 0;
-
-const PLAYER_CACHE_TIME = 5 * 60 * 1000;
-
 
 async function getPlayer() {
   const now = Date.now();
@@ -225,7 +252,8 @@ async function getPlayer() {
   }
 
   const url =
-    `${FACEIT_API}/players?nickname=${encodeURIComponent(NICKNAME)}`;
+    `${FACEIT_API}/players?nickname=` +
+    encodeURIComponent(NICKNAME);
 
   const player = await faceitFetch(
     url,
@@ -256,6 +284,7 @@ async function getPlayerHistory(playerId, from, to) {
   const limit = 100;
 
   while (offset <= 1000) {
+
     const url =
       `${FACEIT_API}/players/${playerId}/history` +
       `?game=${GAME}` +
@@ -282,15 +311,12 @@ async function getPlayerHistory(playerId, from, to) {
     offset += limit;
   }
 
-
-  // ----------------------------------------------------------
   // Remove duplicados
-  // ----------------------------------------------------------
-
   const unique = [];
   const seen = new Set();
 
   for (const match of allMatches) {
+
     const id =
       match.match_id ||
       match.id ||
@@ -307,7 +333,34 @@ async function getPlayerHistory(playerId, from, to) {
 
 
 // ============================================================
-// MATCH TEAM
+// MATCH DETAIL
+// ============================================================
+
+async function getMatchDetails(matchId) {
+  if (!matchId) {
+    return null;
+  }
+
+  try {
+    return await faceitFetch(
+      `${FACEIT_API}/matches/${matchId}`,
+      `GET /matches/${matchId}`
+    );
+
+  } catch (error) {
+
+    console.error(
+      `Não foi possível obter detalhes do match ${matchId}:`,
+      error.message
+    );
+
+    return null;
+  }
+}
+
+
+// ============================================================
+// PLAYER TEAM
 // ============================================================
 
 function findPlayerTeam(match, playerId) {
@@ -316,7 +369,10 @@ function findPlayerTeam(match, playerId) {
   }
 
   for (const [teamName, team] of Object.entries(match.teams)) {
-    if (!team) continue;
+
+    if (!team) {
+      continue;
+    }
 
     const players =
       team.roster ||
@@ -328,6 +384,7 @@ function findPlayerTeam(match, playerId) {
     }
 
     for (const player of players) {
+
       if (
         player?.player_id === playerId ||
         player?.id === playerId
@@ -342,7 +399,7 @@ function findPlayerTeam(match, playerId) {
 
 
 // ============================================================
-// MATCH WINNER
+// WINNER
 // ============================================================
 
 function findWinner(match) {
@@ -370,59 +427,83 @@ function findWinner(match) {
 
 
 // ============================================================
-// MATCH DETAIL FALLBACK
+// MATCH RESULT
 // ============================================================
 
-async function getMatchDetails(matchId) {
-  if (!matchId) {
-    return null;
-  }
+async function getMatchResult(match, playerId) {
 
-  try {
-    return await faceitFetch(
-      `${FACEIT_API}/matches/${matchId}`,
-      `GET /matches/${matchId}`
+  let playerTeam =
+    findPlayerTeam(
+      match,
+      playerId
     );
 
-  } catch (error) {
-    console.error(
-      `Não foi possível obter detalhes do match ${matchId}:`,
-      error.message
-    );
+  let winner =
+    findWinner(match);
 
-    return null;
-  }
-}
+  let detail = null;
 
+  if (
+    (!playerTeam || !winner) &&
+    match.match_id
+  ) {
 
-function findPlayerTeamInMatchDetail(match, playerId) {
-  if (!match?.teams) {
-    return null;
-  }
+    detail =
+      await getMatchDetails(
+        match.match_id
+      );
 
-  for (const [teamName, team] of Object.entries(match.teams)) {
-    if (!team) continue;
+    if (detail) {
 
-    const players =
-      team.roster ||
-      team.players ||
-      [];
+      if (!playerTeam) {
 
-    if (!Array.isArray(players)) {
-      continue;
-    }
+        playerTeam =
+          findPlayerTeam(
+            detail,
+            playerId
+          );
+      }
 
-    for (const player of players) {
-      if (
-        player?.player_id === playerId ||
-        player?.id === playerId
-      ) {
-        return teamName;
+      if (!winner) {
+
+        winner =
+          findWinner(
+            detail
+          );
+
+        if (
+          !winner &&
+          detail.detailed_results
+        ) {
+
+          for (
+            const result
+            of detail.detailed_results
+          ) {
+
+            if (result?.winner) {
+
+              winner =
+                result.winner;
+
+              break;
+            }
+          }
+        }
       }
     }
   }
 
-  return null;
+  if (!playerTeam || !winner) {
+    return null;
+  }
+
+  return {
+    win: winner === playerTeam,
+    playerTeam,
+    winner,
+    detail
+  };
 }
 
 
@@ -431,10 +512,12 @@ function findPlayerTeamInMatchDetail(match, playerId) {
 // ============================================================
 
 async function calculateResults(matches, playerId) {
+
   let wins = 0;
   let losses = 0;
 
   for (const match of matches) {
+
     if (!match) {
       continue;
     }
@@ -450,69 +533,17 @@ async function calculateResults(matches, playerId) {
       continue;
     }
 
-    let playerTeam =
-      findPlayerTeam(
+    const result =
+      await getMatchResult(
         match,
         playerId
       );
 
-    let winner =
-      findWinner(match);
-
-
-    // --------------------------------------------------------
-    // Fallback
-    // --------------------------------------------------------
-
-    if (
-      (!playerTeam || !winner) &&
-      match.match_id
-    ) {
-      const detail =
-        await getMatchDetails(
-          match.match_id
-        );
-
-      if (detail) {
-
-        if (!playerTeam) {
-          playerTeam =
-            findPlayerTeamInMatchDetail(
-              detail,
-              playerId
-            );
-        }
-
-        if (!winner) {
-          winner =
-            findWinner(detail);
-
-          if (
-            !winner &&
-            detail.detailed_results
-          ) {
-            for (
-              const result
-              of detail.detailed_results
-            ) {
-              if (result?.winner) {
-                winner =
-                  result.winner;
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-
-
-    if (!playerTeam || !winner) {
+    if (!result) {
       continue;
     }
 
-
-    if (winner === playerTeam) {
+    if (result.win) {
       wins++;
     } else {
       losses++;
@@ -527,7 +558,7 @@ async function calculateResults(matches, playerId) {
 
 
 // ============================================================
-// PLAYER K/D
+// PLAYER STATS
 // ============================================================
 
 async function getPlayerStats(
@@ -535,6 +566,7 @@ async function getPlayerStats(
   from,
   to
 ) {
+
   const url =
     `${FACEIT_API}/players/${playerId}/games/${GAME}/stats` +
     `?from=${from}` +
@@ -548,7 +580,12 @@ async function getPlayerStats(
 }
 
 
+// ============================================================
+// K/D
+// ============================================================
+
 function calculateKD(statsData) {
+
   const items =
     Array.isArray(statsData?.items)
       ? statsData.items
@@ -558,6 +595,7 @@ function calculateKD(statsData) {
   let deaths = 0;
 
   for (const item of items) {
+
     const stats =
       item?.stats || {};
 
@@ -598,10 +636,246 @@ function calculateKD(statsData) {
 
 
 // ============================================================
-// ELO TRACKING
+// POSSIBLE ELO EXTRACTION
 // ============================================================
 
-function updateEloHistory(currentElo) {
+function findNumber(value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return null;
+  }
+
+  const n = Number(value);
+
+  return Number.isFinite(n)
+    ? n
+    : null;
+}
+
+
+function extractPossibleElo(match, playerId) {
+
+  const candidates = [];
+
+  function add(value, source) {
+
+    const n = findNumber(value);
+
+    if (
+      n !== null &&
+      n >= 0 &&
+      n <= 5000
+    ) {
+      candidates.push({
+        value: n,
+        source
+      });
+    }
+  }
+
+  // Common possible locations
+  add(
+    match?.faceit_elo,
+    "match.faceit_elo"
+  );
+
+  add(
+    match?.elo,
+    "match.elo"
+  );
+
+  add(
+    match?.player_elo,
+    "match.player_elo"
+  );
+
+  add(
+    match?.players?.[playerId]?.faceit_elo,
+    "match.players[player].faceit_elo"
+  );
+
+  add(
+    match?.players?.[playerId]?.elo,
+    "match.players[player].elo"
+  );
+
+  if (Array.isArray(match?.players)) {
+
+    const player =
+      match.players.find(
+        p =>
+          p?.player_id === playerId ||
+          p?.id === playerId
+      );
+
+    if (player) {
+
+      add(
+        player.faceit_elo,
+        "match.players[].faceit_elo"
+      );
+
+      add(
+        player.elo,
+        "match.players[].elo"
+      );
+    }
+  }
+
+  return candidates.length
+    ? candidates[0]
+    : null;
+}
+
+
+// ============================================================
+// SAVE / UPDATE MATCH HISTORY
+// ============================================================
+
+function updateMatchHistory(
+  matches,
+  playerId,
+  currentElo
+) {
+
+  const history =
+    loadEloHistory();
+
+  for (const match of matches) {
+
+    if (!match) {
+      continue;
+    }
+
+    const matchId =
+      match.match_id ||
+      match.id;
+
+    if (!matchId) {
+      continue;
+    }
+
+    const timestamp =
+      Number(
+        match.finished_at ??
+        match.started_at ??
+        0
+      );
+
+    if (!timestamp) {
+      continue;
+    }
+
+    const date =
+      new Date(
+        timestamp * 1000
+      );
+
+    const dateString =
+      getPortugalDateString(
+        date
+      );
+
+    const monthString =
+      getPortugalMonthString(
+        date
+      );
+
+    const result =
+      findWinner(match);
+
+    const playerTeam =
+      findPlayerTeam(
+        match,
+        playerId
+      );
+
+    const possibleElo =
+      extractPossibleElo(
+        match,
+        playerId
+      );
+
+    if (!history.matches[matchId]) {
+
+      history.matches[matchId] = {
+        matchId,
+        date: dateString,
+        month: monthString,
+        startedAt:
+          match.started_at || null,
+        finishedAt:
+          match.finished_at || null,
+
+        result:
+          playerTeam &&
+          result
+            ? result === playerTeam
+              ? "win"
+              : "loss"
+            : null,
+
+        elo:
+          possibleElo
+            ? possibleElo.value
+            : null,
+
+        eloSource:
+          possibleElo
+            ? possibleElo.source
+            : null,
+
+        recordedAt:
+          Date.now()
+      };
+
+    } else {
+
+      const saved =
+        history.matches[matchId];
+
+      if (
+        possibleElo &&
+        !Number.isFinite(
+          Number(saved.elo)
+        )
+      ) {
+
+        saved.elo =
+          possibleElo.value;
+
+        saved.eloSource =
+          possibleElo.source;
+      }
+
+      if (
+        !saved.result &&
+        playerTeam &&
+        result
+      ) {
+
+        saved.result =
+          result === playerTeam
+            ? "win"
+            : "loss";
+      }
+    }
+  }
+
+  saveEloHistory(history);
+
+  return history;
+}
+
+
+// ============================================================
+// DAILY / MONTHLY SNAPSHOT
+// ============================================================
+
+function updateEloSnapshot(currentElo) {
+
   const result = {
     eloToday: 0,
     eloMonth: 0
@@ -610,7 +884,6 @@ function updateEloHistory(currentElo) {
   if (!Number.isFinite(currentElo)) {
     return result;
   }
-
 
   const history =
     loadEloHistory();
@@ -621,19 +894,11 @@ function updateEloHistory(currentElo) {
   const month =
     getPortugalMonthString();
 
-
-  // ==========================================================
+  // --------------------------
   // DAY
-  // ==========================================================
+  // --------------------------
 
   if (!history.days[today]) {
-
-    /*
-      Primeiro snapshot deste dia.
-
-      IMPORTANTE:
-      Este valor NÃO será alterado nas consultas seguintes.
-    */
 
     history.days[today] = {
       startElo: currentElo,
@@ -642,11 +907,6 @@ function updateEloHistory(currentElo) {
     };
 
   } else {
-
-    /*
-      O startElo fica intocável.
-      Apenas atualizamos o último ELO conhecido.
-    */
 
     const day =
       history.days[today];
@@ -668,9 +928,9 @@ function updateEloHistory(currentElo) {
   }
 
 
-  // ==========================================================
+  // --------------------------
   // MONTH
-  // ==========================================================
+  // --------------------------
 
   if (!history.months[month]) {
 
@@ -702,10 +962,6 @@ function updateEloHistory(currentElo) {
   }
 
 
-  // ==========================================================
-  // CALCULATION
-  // ==========================================================
-
   const todayStart =
     Number(
       history.days[today].startElo
@@ -716,22 +972,62 @@ function updateEloHistory(currentElo) {
       history.months[month].startElo
     );
 
-
   result.eloToday =
     currentElo - todayStart;
 
   result.eloMonth =
     currentElo - monthStart;
 
-
-  // ==========================================================
-  // SAVE
-  // ==========================================================
-
   saveEloHistory(history);
 
-
   return result;
+}
+
+
+// ============================================================
+// ELO HISTORY SUMMARY
+// ============================================================
+
+function getEloHistorySummary() {
+
+  const history =
+    loadEloHistory();
+
+  const today =
+    getPortugalDateString();
+
+  const month =
+    getPortugalMonthString();
+
+  const todayData =
+    history.days[today] || null;
+
+  const monthData =
+    history.months[month] || null;
+
+  const currentElo =
+    monthData
+      ? Number(monthData.lastElo)
+      : null;
+
+  return {
+    today,
+    month,
+
+    todayData,
+    monthData,
+
+    currentElo,
+
+    days:
+      history.days,
+
+    months:
+      history.months,
+
+    matches:
+      history.matches
+  };
 }
 
 
@@ -740,14 +1036,9 @@ function updateEloHistory(currentElo) {
 // ============================================================
 
 function getMonthRange() {
+
   const date =
     getPortugalDateParts();
-
-  /*
-    Começamos no primeiro dia do mês,
-    em UTC, com uma margem de segurança
-    para timezone/DST.
-  */
 
   const start =
     Math.floor(
@@ -773,474 +1064,518 @@ function getMonthRange() {
 
 
 // ============================================================
-// STATS CACHE
+// API /ELO-HISTORY
 // ============================================================
 
-let statsCache = null;
-let statsCacheTime = 0;
+app.get(
+  "/api/elo-history",
+  (req, res) => {
 
-const STATS_CACHE_TIME =
-  60 * 1000;
+    try {
+
+      const data =
+        getEloHistorySummary();
+
+      return res.json(data);
+
+    } catch (error) {
+
+      console.error(
+        "Erro /api/elo-history:",
+        error
+      );
+
+      return res.status(500).json({
+        error:
+          "Não foi possível obter o histórico de ELO."
+      });
+    }
+  }
+);
 
 
 // ============================================================
 // API /STATS
 // ============================================================
 
-app.get("/api/stats", async (req, res) => {
-
-  try {
-
-    const now =
-      Date.now();
-
-
-    // --------------------------------------------------------
-    // CACHE
-    // --------------------------------------------------------
-
-    if (
-      statsCache &&
-      now - statsCacheTime <
-        STATS_CACHE_TIME
-    ) {
-      return res.json(
-        statsCache
-      );
-    }
-
-
-    // --------------------------------------------------------
-    // API KEY
-    // --------------------------------------------------------
-
-    if (
-      !process.env.FACEIT_API_KEY
-    ) {
-      return res.status(500).json({
-        error:
-          "FACEIT_API_KEY não configurada."
-      });
-    }
-
-
-    console.log(
-      "======================================"
-    );
-
-    console.log(
-      "A iniciar atualização FACEIT..."
-    );
-
-    console.log(
-      "======================================"
-    );
-
-
-    // --------------------------------------------------------
-    // PLAYER
-    // --------------------------------------------------------
-
-    const player =
-      await getPlayer();
-
-    const playerId =
-      player.player_id;
-
-    const nickname =
-      player.nickname ||
-      NICKNAME;
-
-    const currentElo =
-      Number(
-        player.games?.cs2?.faceit_elo
-      );
-
-
-    console.log(
-      `Jogador: ${nickname}`
-    );
-
-    console.log(
-      `Player ID: ${playerId}`
-    );
-
-    console.log(
-      `Current Elo: ${currentElo}`
-    );
-
-
-    // --------------------------------------------------------
-    // MONTH
-    // --------------------------------------------------------
-
-    const range =
-      getMonthRange();
-
-
-    const monthMatches =
-      await getPlayerHistory(
-        playerId,
-        range.from,
-        range.to
-      );
-
-
-    console.log(
-      `Matches encontrados: ${monthMatches.length}`
-    );
-
-
-    // --------------------------------------------------------
-    // WINS / LOSSES
-    // --------------------------------------------------------
-
-    const results =
-      await calculateResults(
-        monthMatches,
-        playerId
-      );
-
-
-    const wins =
-      results.wins;
-
-    const losses =
-      results.losses;
-
-    const games =
-      wins + losses;
-
-
-    // --------------------------------------------------------
-    // K/D
-    // --------------------------------------------------------
-
-    let totalKills = 0;
-    let totalDeaths = 0;
-    let kd = 0;
+app.get(
+  "/api/stats",
+  async (req, res) => {
 
     try {
 
-      const statsData =
-        await getPlayerStats(
+      const now =
+        Date.now();
+
+      // --------------------------------------------------------
+      // CACHE
+      // --------------------------------------------------------
+
+      if (
+        statsCache &&
+        now - statsCacheTime <
+          STATS_CACHE_TIME
+      ) {
+
+        return res.json(
+          statsCache
+        );
+      }
+
+
+      // --------------------------------------------------------
+      // API KEY
+      // --------------------------------------------------------
+
+      if (
+        !process.env.FACEIT_API_KEY
+      ) {
+
+        return res.status(500).json({
+          error:
+            "FACEIT_API_KEY não configurada."
+        });
+      }
+
+
+      console.log(
+        "======================================"
+      );
+
+      console.log(
+        "A iniciar atualização FACEIT..."
+      );
+
+      console.log(
+        "======================================"
+      );
+
+
+      // --------------------------------------------------------
+      // PLAYER
+      // --------------------------------------------------------
+
+      const player =
+        await getPlayer();
+
+      const playerId =
+        player.player_id;
+
+      const nickname =
+        player.nickname ||
+        NICKNAME;
+
+      const currentElo =
+        Number(
+          player.games?.cs2?.faceit_elo
+        );
+
+
+      console.log(
+        `Jogador: ${nickname}`
+      );
+
+      console.log(
+        `Player ID: ${playerId}`
+      );
+
+      console.log(
+        `Current Elo: ${currentElo}`
+      );
+
+
+      // --------------------------------------------------------
+      // MONTH
+      // --------------------------------------------------------
+
+      const range =
+        getMonthRange();
+
+      const monthMatches =
+        await getPlayerHistory(
           playerId,
-          range.from * 1000,
-          Date.now()
+          range.from,
+          range.to
         );
 
 
-      const kdData =
-        calculateKD(
-          statsData
+      console.log(
+        `Matches encontrados: ${monthMatches.length}`
+      );
+
+
+      // --------------------------------------------------------
+      // SAVE MATCH HISTORY
+      // --------------------------------------------------------
+
+      updateMatchHistory(
+        monthMatches,
+        playerId,
+        currentElo
+      );
+
+
+      // --------------------------------------------------------
+      // WINS / LOSSES
+      // --------------------------------------------------------
+
+      const results =
+        await calculateResults(
+          monthMatches,
+          playerId
+        );
+
+      const wins =
+        results.wins;
+
+      const losses =
+        results.losses;
+
+      const games =
+        wins + losses;
+
+
+      // --------------------------------------------------------
+      // K/D
+      // --------------------------------------------------------
+
+      let totalKills = 0;
+      let totalDeaths = 0;
+      let kd = 0;
+
+      try {
+
+        const statsData =
+          await getPlayerStats(
+            playerId,
+            range.from * 1000,
+            Date.now()
+          );
+
+        const kdData =
+          calculateKD(
+            statsData
+          );
+
+        totalKills =
+          kdData.kills;
+
+        totalDeaths =
+          kdData.deaths;
+
+        kd =
+          kdData.kd;
+
+      } catch (error) {
+
+        console.error(
+          "Erro ao obter K/D:",
+          error.message
+        );
+      }
+
+
+      // --------------------------------------------------------
+      // WIN RATE
+      // --------------------------------------------------------
+
+      const winRate =
+        games > 0
+          ? (wins / games) * 100
+          : 0;
+
+
+      // --------------------------------------------------------
+      // GOAL
+      // --------------------------------------------------------
+
+      const goal =
+        50;
+
+      const winsRemaining =
+        Math.max(
+          goal - wins,
+          0
         );
 
 
-      totalKills =
-        kdData.kills;
+      // --------------------------------------------------------
+      // DAYS
+      // --------------------------------------------------------
 
-      totalDeaths =
-        kdData.deaths;
+      const portugalDate =
+        getPortugalDateParts();
 
-      kd =
-        kdData.kd;
+      const currentDay =
+        portugalDate.day;
+
+      const year =
+        portugalDate.year;
+
+      const month =
+        portugalDate.month;
+
+      const lastDay =
+        new Date(
+          year,
+          month,
+          0
+        ).getDate();
+
+      const daysRemaining =
+        Math.max(
+          lastDay - currentDay,
+          0
+        );
+
+
+      // --------------------------------------------------------
+      // PACE
+      // --------------------------------------------------------
+
+      const daysElapsed =
+        Math.max(
+          currentDay,
+          1
+        );
+
+      const averagePerDay =
+        wins / daysElapsed;
+
+      const requiredPerDay =
+        daysRemaining > 0
+          ? winsRemaining / daysRemaining
+          : winsRemaining;
+
+
+      // --------------------------------------------------------
+      // PROGRESS
+      // --------------------------------------------------------
+
+      const progress =
+        goal > 0
+          ? Math.min(
+              (wins / goal) * 100,
+              100
+            )
+          : 0;
+
+
+      // --------------------------------------------------------
+      // ELO
+      // --------------------------------------------------------
+
+      let eloToday = 0;
+      let eloMonth = 0;
+
+      if (
+        Number.isFinite(
+          currentElo
+        )
+      ) {
+
+        const eloData =
+          updateEloSnapshot(
+            currentElo
+          );
+
+        eloToday =
+          eloData.eloToday;
+
+        eloMonth =
+          eloData.eloMonth;
+      }
+
+
+      // --------------------------------------------------------
+      // ELO HISTORY
+      // --------------------------------------------------------
+
+      const eloHistory =
+        getEloHistorySummary();
+
+
+      // --------------------------------------------------------
+      // MONTH NAME
+      // --------------------------------------------------------
+
+      const monthName =
+        new Intl.DateTimeFormat(
+          "pt-PT",
+          {
+            month: "long",
+            timeZone: "Europe/Lisbon"
+          }
+        ).format(
+          new Date()
+        );
+
+
+      // --------------------------------------------------------
+      // RESPONSE
+      // --------------------------------------------------------
+
+      const response = {
+
+        nickname,
+
+        month:
+          monthName
+            .charAt(0)
+            .toUpperCase() +
+          monthName.slice(1),
+
+        year,
+
+        goal,
+
+        wins,
+
+        losses,
+
+        games,
+
+        winRate,
+
+        kd,
+
+        totalKills,
+
+        totalDeaths,
+
+        averageRating: 0,
+
+        ratingMatches: 0,
+
+        averagePerDay,
+
+        requiredPerDay,
+
+        daysRemaining,
+
+        winsRemaining,
+
+        progress,
+
+        currentElo,
+
+        eloToday,
+
+        eloMonth,
+
+        // Novo
+        eloHistory,
+
+        updatedAt:
+          new Date().toISOString(),
+
+        matchesFound:
+          monthMatches.length
+      };
+
+
+      // --------------------------------------------------------
+      // CACHE
+      // --------------------------------------------------------
+
+      statsCache =
+        response;
+
+      statsCacheTime =
+        Date.now();
+
+
+      // --------------------------------------------------------
+      // LOG
+      // --------------------------------------------------------
+
+      console.log(
+        "======================================"
+      );
+
+      console.log(
+        "FACEIT atualizado com sucesso"
+      );
+
+      console.log(
+        `Wins: ${wins}`
+      );
+
+      console.log(
+        `Losses: ${losses}`
+      );
+
+      console.log(
+        `Games: ${games}`
+      );
+
+      console.log(
+        `Winrate: ${winRate.toFixed(2)}%`
+      );
+
+      console.log(
+        `KD: ${kd.toFixed(2)}`
+      );
+
+      console.log(
+        `Elo: ${currentElo}`
+      );
+
+      console.log(
+        `Elo hoje: ${
+          eloToday >= 0
+            ? "+"
+            : ""
+        }${eloToday}`
+      );
+
+      console.log(
+        `Elo mês: ${
+          eloMonth >= 0
+            ? "+"
+            : ""
+        }${eloMonth}`
+      );
+
+      console.log(
+        "======================================"
+      );
+
+
+      return res.json(
+        response
+      );
+
 
     } catch (error) {
 
       console.error(
-        "Erro ao obter K/D:",
-        error.message
+        "======================================"
       );
+
+      console.error(
+        "ERRO /api/stats:"
+      );
+
+      console.error(
+        error
+      );
+
+      console.error(
+        "======================================"
+      );
+
+      return res.status(500).json({
+
+        error:
+          "Não foi possível obter os dados da FACEIT.",
+
+        details:
+          error.message
+      });
     }
-
-
-    // --------------------------------------------------------
-    // WIN RATE
-    // --------------------------------------------------------
-
-    const winRate =
-      games > 0
-        ? (wins / games) * 100
-        : 0;
-
-
-    // --------------------------------------------------------
-    // GOAL
-    // --------------------------------------------------------
-
-    const goal = 50;
-
-    const winsRemaining =
-      Math.max(
-        goal - wins,
-        0
-      );
-
-
-    // --------------------------------------------------------
-    // DAYS
-    // --------------------------------------------------------
-
-    const portugalDate =
-      getPortugalDateParts();
-
-    const currentDay =
-      portugalDate.day;
-
-    const year =
-      portugalDate.year;
-
-    const month =
-      portugalDate.month;
-
-
-    const lastDay =
-      new Date(
-        year,
-        month,
-        0
-      ).getDate();
-
-
-    const daysRemaining =
-      Math.max(
-        lastDay - currentDay,
-        0
-      );
-
-
-    // --------------------------------------------------------
-    // PACE
-    // --------------------------------------------------------
-
-    const daysElapsed =
-      Math.max(
-        currentDay,
-        1
-      );
-
-
-    const averagePerDay =
-      wins / daysElapsed;
-
-
-    const requiredPerDay =
-      daysRemaining > 0
-        ? winsRemaining / daysRemaining
-        : winsRemaining;
-
-
-    // --------------------------------------------------------
-    // PROGRESS
-    // --------------------------------------------------------
-
-    const progress =
-      goal > 0
-        ? Math.min(
-            (wins / goal) * 100,
-            100
-          )
-        : 0;
-
-
-    // --------------------------------------------------------
-    // ELO
-    // --------------------------------------------------------
-
-    let eloToday = 0;
-    let eloMonth = 0;
-
-
-    if (
-      Number.isFinite(currentElo)
-    ) {
-
-      const eloData =
-        updateEloHistory(
-          currentElo
-        );
-
-
-      eloToday =
-        eloData.eloToday;
-
-      eloMonth =
-        eloData.eloMonth;
-    }
-
-
-    // --------------------------------------------------------
-    // MONTH NAME
-    // --------------------------------------------------------
-
-    const monthName =
-      new Intl.DateTimeFormat(
-        "pt-PT",
-        {
-          month: "long",
-          timeZone: "Europe/Lisbon"
-        }
-      ).format(
-        new Date()
-      );
-
-
-    // --------------------------------------------------------
-    // RESPONSE
-    // --------------------------------------------------------
-
-    const response = {
-
-      nickname,
-
-      month:
-        monthName
-          .charAt(0)
-          .toUpperCase() +
-        monthName.slice(1),
-
-      year,
-
-      goal,
-
-      wins,
-      losses,
-      games,
-
-      winRate,
-
-      kd,
-
-      totalKills,
-      totalDeaths,
-
-      averageRating: 0,
-      ratingMatches: 0,
-
-      averagePerDay,
-      requiredPerDay,
-
-      daysRemaining,
-
-      winsRemaining,
-
-      progress,
-
-      currentElo,
-
-      eloToday,
-      eloMonth,
-
-      updatedAt:
-        new Date().toISOString(),
-
-      matchesFound:
-        monthMatches.length
-    };
-
-
-    // --------------------------------------------------------
-    // CACHE
-    // --------------------------------------------------------
-
-    statsCache =
-      response;
-
-    statsCacheTime =
-      Date.now();
-
-
-    // --------------------------------------------------------
-    // LOG
-    // --------------------------------------------------------
-
-    console.log(
-      "======================================"
-    );
-
-    console.log(
-      "FACEIT atualizado com sucesso"
-    );
-
-    console.log(
-      `Wins: ${wins}`
-    );
-
-    console.log(
-      `Losses: ${losses}`
-    );
-
-    console.log(
-      `Games: ${games}`
-    );
-
-    console.log(
-      `Winrate: ${winRate.toFixed(2)}%`
-    );
-
-    console.log(
-      `KD: ${kd.toFixed(2)}`
-    );
-
-    console.log(
-      `Elo: ${currentElo}`
-    );
-
-    console.log(
-      `Elo hoje: ${
-        eloToday >= 0
-          ? "+"
-          : ""
-      }${eloToday}`
-    );
-
-    console.log(
-      `Elo mês: ${
-        eloMonth >= 0
-          ? "+"
-          : ""
-      }${eloMonth}`
-    );
-
-    console.log(
-      "======================================"
-    );
-
-
-    return res.json(
-      response
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "======================================"
-    );
-
-    console.error(
-      "ERRO /api/stats:"
-    );
-
-    console.error(
-      error
-    );
-
-    console.error(
-      "======================================"
-    );
-
-
-    return res.status(500).json({
-
-      error:
-        "Não foi possível obter os dados da FACEIT.",
-
-      details:
-        error.message
-    });
   }
-});
+);
 
 
 // ============================================================
@@ -1253,7 +1588,8 @@ app.get(
 
     res.json({
 
-      status: "ok",
+      status:
+        "ok",
 
       faceitApiKey:
         Boolean(
@@ -1292,3 +1628,4 @@ app.listen(
     );
   }
 );
+```
